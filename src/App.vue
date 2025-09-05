@@ -1,28 +1,30 @@
-<template>
-  <el-config-provider>
-    <router-view></router-view>
-  </el-config-provider>
-</template>
-
-<script setup>
-import { ElConfigProvider } from 'element-plus'
+<script setup lang="ts">
+import HelloWorld from './components/HelloWorld.vue'
 </script>
 
-<style>
-#app {
-  width: 100%;
-  height: 100vh;
-}
+<template>
+  <div>
+    <a href="https://vite.dev" target="_blank">
+      <img src="/vite.svg" class="logo" alt="Vite logo" />
+    </a>
+    <a href="https://vuejs.org/" target="_blank">
+      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+    </a>
+  </div>
+  <HelloWorld msg="Vite + Vue" />
+</template>
 
-/* 全局样式重置 */
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
+<style scoped>
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
 }
-
-/* Element Plus 样式覆盖 */
-.el-card {
-  border-radius: 8px;
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.vue:hover {
+  filter: drop-shadow(0 0 2em #42b883aa);
 }
 </style>
