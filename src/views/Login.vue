@@ -53,8 +53,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { defineComponent, ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
@@ -63,6 +63,7 @@ export default defineComponent({
   name: 'Login',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const authStore = useAuthStore()
     const loginFormRef = ref<FormInstance>()
     const loading = ref(false)
@@ -93,7 +94,6 @@ export default defineComponent({
     }
 
     const handleLineLogin = () => {
-      // 跳转到 LINE 登录页面仅获取账号
       const LINE_AUTH_URL = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${import.meta.env.VITE_LINE_CHANNEL_ID}&redirect_uri=${import.meta.env.VITE_LINE_REDIRECT_URI}&state=12345&scope=openid profile`
       window.location.href = LINE_AUTH_URL
     }
@@ -136,6 +136,38 @@ export default defineComponent({
           }
         }
       })
+    }
+
+    onMounted(() => {
+      // 处理 LINE 登录回调
+      if (route.query.code) {
+        handleLineCallback(route.query.code as string)
+      }
+    })
+
+    const handleLineCallback = async (code: string) => {
+      try {
+        const response = await fetch('/api/line/callback', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code })
+        })
+
+        const data = await response.json()
+        
+        if (data.success) {
+          savedLineId.value = data.lineId
+          loginForm.loginType = 'line'
+          loginForm.username = data.lineId
+          ElMessage.success('LINE ID 获取成功')
+        } else {
+          ElMessage.error(data.message || '获取 LINE ID 失败')
+        }
+      } catch (error) {
+        ElMessage.error('获取 LINE ID 失败')
+      }
     }
 
     return {

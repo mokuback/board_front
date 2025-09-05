@@ -7,6 +7,11 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('../views/Login.vue')
     },
     {
+        path: '/login/callback',
+        name: 'LineCallback',
+        component: () => import('../views/Login.vue')
+    },
+    {
         path: '/board',
         name: 'Board',
         component: () => import('../views/Board.vue'),
