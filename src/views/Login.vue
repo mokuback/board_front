@@ -6,6 +6,24 @@
       </template>
       
       <el-form :model="loginForm" :rules="rules" ref="loginFormRef">
+        <!-- 登录类型选择 -->
+        <el-form-item prop="loginType">
+          <el-select v-model="loginForm.loginType" @change="handleLoginTypeChange">
+            <el-option label="Line" value="line" />
+            <el-option label="其它" value="other" />
+          </el-select>
+        </el-form-item>
+
+        <!-- 帐号输入框 -->
+        <el-form-item prop="username">
+          <el-input
+            v-model="loginForm.username"
+            :placeholder="loginForm.loginType === 'line' ? 'Line ID' : '请输入帐号'"
+            :disabled="loginForm.loginType === 'line'"
+          />
+        </el-form-item>
+        
+        <!-- 密码输入框 -->
         <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
@@ -15,7 +33,15 @@
             @keyup.enter="handleLogin"
           />
         </el-form-item>
+
+        <!-- LINE 登录按钮 -->
+        <el-form-item v-if="loginForm.loginType === 'line'">
+          <el-button type="primary" @click="handleLineLogin" style="width: 100%">
+            使用 LINE 获取账号
+          </el-button>
+        </el-form-item>
         
+        <!-- 普通登录按钮 -->
         <el-form-item>
           <el-button type="primary" @click="handleLogin" :loading="loading" style="width: 100%">
             登录
@@ -26,52 +52,103 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue'
+<script lang="ts">
+import { defineComponent, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { ElMessage } from 'element-plus'
+import type { FormInstance } from 'element-plus'
 
-const router = useRouter()
-const authStore = useAuthStore()
-const loginFormRef = ref(null)
-const loading = ref(false)
+export default defineComponent({
+  name: 'Login',
+  setup() {
+    const router = useRouter()
+    const authStore = useAuthStore()
+    const loginFormRef = ref<FormInstance>()
+    const loading = ref(false)
+    const savedLineId = ref(localStorage.getItem('lineId') || '')
 
-const loginForm = reactive({
-  password: ''
-})
+    const loginForm = reactive({
+      loginType: savedLineId.value ? 'line' : 'other',
+      username: savedLineId.value || '',
+      password: ''
+    })
 
-const rules = {
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
-  ]
-}
+    const rules = {
+      loginType: [{ required: true, message: '请选择登录类型', trigger: 'change' }],
+      username: [{ required: true, message: '请输入帐号', trigger: 'blur' }],
+      password: [
+        { required: true, message: '请输入密码', trigger: 'blur' },
+        { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+      ]
+    }
 
-const handleLogin = async () => {
-  if (!loginFormRef.value) return
-  
-  await loginFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        // 这里后续会连接到后端API
-        // 暂时使用模拟登录
-        if (loginForm.password === 'admin123') {
-          authStore.setToken('mock-token')
-          ElMessage.success('登录成功')
-          router.push('/board')
-        } else {
-          ElMessage.error('密码错误')
-        }
-      } catch (error) {
-        ElMessage.error('登录失败')
-      } finally {
-        loading.value = false
+    const handleLoginTypeChange = (value: string) => {
+      if (value === 'line') {
+        loginForm.username = savedLineId.value || ''
+      } else {
+        loginForm.username = ''
+        loginForm.password = ''
       }
     }
-  })
-}
+
+    const handleLineLogin = () => {
+      // 跳转到 LINE 登录页面仅获取账号
+      const LINE_AUTH_URL = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${import.meta.env.VITE_LINE_CHANNEL_ID}&redirect_uri=${import.meta.env.VITE_LINE_REDIRECT_URI}&state=12345&scope=openid profile`
+      window.location.href = LINE_AUTH_URL
+    }
+
+    const handleLogin = async () => {
+      if (!loginFormRef.value) return
+      
+      await loginFormRef.value.validate(async (valid: boolean) => {
+        if (valid) {
+          loading.value = true
+          try {
+            const response = await fetch('/api/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                loginType: loginForm.loginType,
+                username: loginForm.username,
+                password: loginForm.password
+              })
+            })
+
+            const data = await response.json()
+            
+            if (data.success) {
+              authStore.setToken(data.token)
+              if (loginForm.loginType === 'line') {
+                localStorage.setItem('lineId', loginForm.username)
+              }
+              ElMessage.success('登录成功')
+              router.push('/board')
+            } else {
+              ElMessage.error(data.message || '登录失败')
+            }
+          } catch (error) {
+            ElMessage.error('登录失败')
+          } finally {
+            loading.value = false
+          }
+        }
+      })
+    }
+
+    return {
+      loginForm,
+      rules,
+      loginFormRef,
+      loading,
+      handleLogin,
+      handleLoginTypeChange,
+      handleLineLogin
+    }
+  }
+})
 </script>
 
 <style scoped>

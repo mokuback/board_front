@@ -9,11 +9,12 @@
                :key="message.id" 
                class="message-item">
         <div class="message-content">
-          <p>{{ message.content }}</p>
+          <!-- 先显示图片，后显示文字 -->
           <img v-if="message.image" 
                :src="message.image" 
                class="message-image"
                @click="previewImage(message.image)" />
+          <p>{{ message.content }}</p>
         </div>
         
         <div class="message-footer">
@@ -36,44 +37,62 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script lang="ts">
+import { defineComponent, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 
-const props = defineProps({
-  messages: {
-    type: Array,
-    required: true
+interface Message {
+  id: number
+  content: string
+  image?: string
+  timestamp: string
+}
+
+export default defineComponent({
+  name: 'MessageList',
+  props: {
+    messages: {
+      type: Array as () => Message[],
+      required: true
+    }
+  },
+  setup(props, { emit }) {
+    const previewVisible = ref(false)
+    const previewUrl = ref('')
+
+    const formatTime = (timestamp: string) => {
+      const date = new Date(timestamp)
+      return date.toLocaleString()
+    }
+
+    const previewImage = (url: string) => {
+      previewUrl.value = url
+      previewVisible.value = true
+    }
+
+    const handleDelete = (messageId: number) => {
+      ElMessageBox.confirm(
+        '确定要删除这条留言吗？',
+        '警告',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      ).then(() => {
+        emit('delete', messageId)
+      }).catch(() => {})
+    }
+
+    return {
+      previewVisible,
+      previewUrl,
+      formatTime,
+      previewImage,
+      handleDelete
+    }
   }
 })
-
-const emit = defineEmits(['delete'])
-const previewVisible = ref(false)
-const previewUrl = ref('')
-
-const formatTime = (timestamp) => {
-  const date = new Date(timestamp)
-  return date.toLocaleString()
-}
-
-const previewImage = (url) => {
-  previewUrl.value = url
-  previewVisible.value = true
-}
-
-const handleDelete = (messageId) => {
-  ElMessageBox.confirm(
-    '确定要删除这条留言吗？',
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    emit('delete', messageId)
-  }).catch(() => {})
-}
 </script>
 
 <style scoped>
@@ -97,7 +116,7 @@ const handleDelete = (messageId) => {
 }
 
 .message-content p {
-  margin: 0 0 10px 0;
+  margin: 10px 0 0 0;
   white-space: pre-wrap;
 }
 

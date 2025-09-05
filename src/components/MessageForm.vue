@@ -1,5 +1,12 @@
 <template>
   <el-form :model="form" :rules="rules" ref="formRef">
+    <el-form-item prop="image">
+      <ImageUpload
+        v-model="form.imagePreview"
+        @image-selected="handleImageSelected"
+      />
+    </el-form-item>
+    
     <el-form-item prop="content">
       <el-input
         v-model="form.content"
@@ -7,19 +14,6 @@
         :rows="4"
         placeholder="请输入留言内容..."
       />
-    </el-form-item>
-    
-    <el-form-item prop="image">
-      <el-upload
-        class="image-uploader"
-        action="#"
-        :show-file-list="false"
-        :before-upload="beforeImageUpload"
-        :http-request="handleImageUpload"
-      >
-        <img v-if="form.image" :src="form.image" class="uploaded-image" />
-        <el-icon v-else class="upload-icon"><Plus /></el-icon>
-      </el-upload>
     </el-form-item>
     
     <el-form-item>
@@ -30,69 +24,84 @@
   </el-form>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+<script lang="ts">
+import { defineComponent, ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import ImageUpload from './ImageUpload.vue'
+import { uploadToCloudinary } from '../utils/imageUpload'
 
-const emit = defineEmits(['submit'])
-const formRef = ref(null)
-const loading = ref(false)
-
-const form = reactive({
-  content: '',
-  image: ''
-})
-
-const rules = {
-  content: [
-    { required: true, message: '请输入留言内容', trigger: 'blur' },
-    { min: 1, max: 500, message: '长度在 1 到 500 个字符', trigger: 'blur' }
-  ]
+interface FormData {
+  content: string
+  imagePreview: string
+  imageFile: File | null
 }
 
-const beforeImageUpload = (file) => {
-  const isImage = file.type.startsWith('image/')
-  const isLt2M = file.size / 1024 / 1024 < 2
+export default defineComponent({
+  name: 'MessageForm',
+  components: { ImageUpload },
+  emits: ['submit'],
+  setup(props, { emit }) {
+    const formRef = ref()
+    const loading = ref(false)
 
-  if (!isImage) {
-    ElMessage.error('只能上传图片文件!')
-    return false
-  }
-  if (!isLt2M) {
-    ElMessage.error('图片大小不能超过 2MB!')
-    return false
-  }
-  return true
-}
+    const form = reactive<FormData>({
+      content: '',
+      imagePreview: '',
+      imageFile: null
+    })
 
-const handleImageUpload = async ({ file }) => {
-  // 这里后续会集成 Cloudinary 上传
-  // 暂时使用本地预览
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    form.image = e.target.result
-  }
-  reader.readAsDataURL(file)
-}
-
-const submitForm = async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate((valid) => {
-    if (valid) {
-      loading.value = true
-      try {
-        emit('submit', { ...form })
-        // 重置表单
-        form.content = ''
-        form.image = ''
-      } finally {
-        loading.value = false
-      }
+    const rules = {
+      content: [
+        { required: true, message: '请输入留言内容', trigger: 'blur' },
+        { min: 1, max: 500, message: '长度在 1 到 500 个字符', trigger: 'blur' }
+      ]
     }
-  })
-}
+
+    const handleImageSelected = (file: File) => {
+      form.imageFile = file
+    }
+
+    const submitForm = async () => {
+      if (!formRef.value) return
+      
+      await formRef.value.validate(async (valid: boolean) => {
+        if (valid) {
+          loading.value = true
+          try {
+            let imageUrl = ''
+            if (form.imageFile) {
+              imageUrl = await uploadToCloudinary(form.imageFile)
+            }
+
+            emit('submit', {
+              content: form.content,
+              image: imageUrl
+            })
+
+            // 重置表单
+            form.content = ''
+            form.imagePreview = ''
+            form.imageFile = null
+            ElMessage.success('留言发布成功')
+          } catch (error) {
+            ElMessage.error('留言发布失败')
+          } finally {
+            loading.value = false
+          }
+        }
+      })
+    }
+
+    return {
+      form,
+      rules,
+      formRef,
+      loading,
+      handleImageSelected,
+      submitForm
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -104,9 +113,6 @@ const submitForm = async () => {
   overflow: hidden;
   width: 178px;
   height: 178px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .image-uploader:hover {
