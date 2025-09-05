@@ -57,6 +57,7 @@ import { defineComponent, ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { ElMessage } from 'element-plus'
+import { liff } from '@line/liff'
 import type { FormInstance } from 'element-plus'
 
 export default defineComponent({
@@ -94,8 +95,14 @@ export default defineComponent({
     }
 
     const handleLineLogin = () => {
-      const LINE_AUTH_URL = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${import.meta.env.VITE_LINE_CHANNEL_ID}&redirect_uri=${import.meta.env.VITE_LINE_REDIRECT_URI}&state=12345&scope=openid profile`
-      window.location.href = LINE_AUTH_URL
+      if (liff.isInClient()) {
+        // 在 LINE 内部，使用 LIFF 登录
+        liff.login()
+      } else {
+        // 在外部浏览器，使用 OAuth 登录
+        const LINE_AUTH_URL = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${import.meta.env.VITE_LINE_CHANNEL_ID}&redirect_uri=${import.meta.env.VITE_LINE_REDIRECT_URI}&state=12345&scope=openid profile`
+        window.location.href = LINE_AUTH_URL
+      }
     }
 
     const handleLogin = async () => {
@@ -138,10 +145,23 @@ export default defineComponent({
       })
     }
 
-    onMounted(() => {
+    onMounted(async () => {
       // 处理 LINE 登录回调
       if (route.query.code) {
         handleLineCallback(route.query.code as string)
+      }
+
+      // 初始化 LIFF
+      try {
+        await liff.init({ liffId: '2008056298-jBr2y22v' })
+        if (liff.isInClient() && liff.isLoggedIn()) {
+          const profile = await liff.getProfile()
+          savedLineId.value = profile.userId
+          loginForm.loginType = 'line'
+          loginForm.username = profile.userId
+        }
+      } catch (error) {
+        console.error('LIFF initialization failed', error)
       }
     })
 
