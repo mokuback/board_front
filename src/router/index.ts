@@ -1,11 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import Login from '../components/Login.vue';
+import LoginTest from '../components/LoginTest.vue';
 import MessageBoard from '../components/MessageBoard.vue';
 
 const routes = [
+    // {
+    //     path: '/',
+    //     name: 'Login',
+    //     component: Login, // 默认使用 Login.vue
+    // },
     {
         path: '/',
-        name: 'Home',
-        component: () => import('../App.vue'),
+        name: 'LoginTest',
+        component: LoginTest, // 测试登录组件
     },
     {
         path: '/messages',
@@ -13,6 +20,7 @@ const routes = [
         component: MessageBoard,
         meta: { requiresAuth: true }
     }
+
 ];
 
 const router = createRouter({
@@ -22,6 +30,12 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
+    // 如果路由标记为绕过 LINE 验证，则直接放行
+    // if (to.meta.bypassLineAuth) {
+    //     next();
+    //     return;
+    // }
+
     if (to.meta.requiresAuth) {
         const token = localStorage.getItem('token');
         if (!token) {

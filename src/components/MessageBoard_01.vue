@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, handleError } from 'vue';
 import { useRouter } from 'vue-router';
-import AddMessageDialog from './AddMessageDialog.vue';
-import PasswordSettingsDialog from './PasswordSettingsDialog.vue';
-import NotificationDialog from './NotificationDialog.vue';
+import AddMessageDialog from './AddMessageDialog.vue'; // 导入新增留言对话框组件
 import { showNotification } from '../services/notificationService';
 import { showLoading, hideLoading } from '../services/loadingService';
 import axios from '../services/axiosInterceptor';
-
 
 const COUNTDOWN_SECONDS = 600;
 
@@ -18,34 +15,14 @@ const isAdmin = ref<boolean>(false);
 const isLoading = ref<boolean>(true);
 const showUserId = ref<boolean>(false);
 const countdown = ref<number>(COUNTDOWN_SECONDS);
-const showSidebar = ref(false);
-const messagesContainer = ref<HTMLElement | null>(null);
-
 let timer: number | null = null;
 
 // 消息列表相关状态
 const messages = ref<Array<any>>([]);
 const isMessagesLoading = ref<boolean>(true);
 
+// 新增：控制新增留言对话框的显示状态
 const showAddMessageDialog = ref(false);
-const showPasswordDialog = ref(false);
-const showNotificationDialog = ref(false);
-
-const appTitle = import.meta.env.VITE_APP_TITLE || 'Message Board';
-
-// 添加切换侧边栏的函数
-const toggleSidebar = () => {
-  showSidebar.value = !showSidebar.value;
-};
-
-const scrollToBottom = () => {
-  // 使用 setTimeout 确保在 DOM 完全渲染后执行滚动
-  setTimeout(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    }
-  }, 100); // 添加短暂延迟，确保所有内容都已渲染
-};
 
 // 重置倒计时
 const resetTimer = () => {
@@ -97,10 +74,6 @@ const fetchLatestMessages = async () => {
     messages.value = response.data.sort((a: any, b: any) => 
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
-
-    // 使用 nextTick 确保DOM更新后再滚动
-    await nextTick();
-    scrollToBottom();     
   } catch (error) {
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
@@ -154,31 +127,6 @@ const formatDateTime = (dateTimeString: string) => {
   });
 };
 
-const handleSendNotification = () => {
-  showNotificationDialog.value = true;
-};
-
-const handlePasswordSettings = () => {
-  showPasswordDialog.value = true;
-};
-
-const handleBasicSettings = () => {
-  // 根据isAdmin状态执行不同的基本设定逻辑
-  if (isAdmin.value) {
-    showNotification("admin preferences", 'success');
-  } else {
-    showNotification("user preferences", 'success');
-  }
-};
-
-// 管理员特有的功能处理函数
-const handleUserManagement = () => {
-  showNotification("user management", 'success');
-};
-
-const handleLoginRecords = () => {
-  showNotification("login records", 'success');
-};
 
 // 检查登录状态
 onMounted(async () => {
@@ -212,46 +160,11 @@ onUnmounted(() => {
     <div v-if="isLoading" class="loading">加载中...</div>
     <div v-else class="user-info">
       <div class="header">
-        <button class="menu-button" @click="toggleSidebar">
-          <span class="menu-icon"></span>
-          <span class="menu-icon"></span>
-          <span class="menu-icon"></span>
-        </button>        
         <div class="countdown">
           <span class="countdown-timer">{{ countdown }}秒</span>
         </div>
-
-        <!-- 添加侧边栏 -->
-        <div class="sidebar" :class="{ 'sidebar-active': showSidebar }">
-          <div class="sidebar-content">
-            <h3>選單</h3>
-            <ul class="menu-list">
-              <li @click="handleSendNotification">
-                <span class="menu-item-icon">📢</span>發送通知
-              </li>              
-              <li @click="handlePasswordSettings">
-                <span class="menu-item-icon">🔒</span>密碼設定
-              </li>
-              <li @click="handleBasicSettings">
-                <span class="menu-item-icon">⚙️</span>基本設定
-              </li>
-              <li v-if="isAdmin" @click="handleUserManagement">
-                <span class="menu-item-icon">👥</span>使用者資料
-              </li>
-              <li v-if="isAdmin" @click="handleLoginRecords">
-                <span class="menu-item-icon">📋</span>登入記錄
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- 添加遮罩层 -->
-        <div v-if="showSidebar" class="sidebar-overlay" @click="toggleSidebar"></div>
-
-
-
         <div class="title-section">
-          <h1>{{ appTitle }}</h1>
+          <h1>Message Board</h1>
           <span class="display-name" @click="showUserId = !showUserId">
             <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
             {{ displayName }}
@@ -263,7 +176,7 @@ onUnmounted(() => {
 
       
       <!-- 可滚动消息区域 -->
-      <div ref="messagesContainer" class="messages-container">
+      <div class="messages-container">
         <div v-if="isMessagesLoading" class="loading-messages">加载消息中...</div>
         <div v-else-if="messages.length === 0" class="no-messages">暂无留言</div>
         <div v-else class="messages-list">
@@ -300,12 +213,6 @@ onUnmounted(() => {
         v-model="showAddMessageDialog"
         @message-created="fetchLatestMessages"
       />
-      <PasswordSettingsDialog 
-        v-model="showPasswordDialog"
-      />
-      <NotificationDialog
-        v-model="showNotificationDialog"
-      />    
     </div>
   </div>
 </template>
@@ -358,7 +265,7 @@ h1 {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 999;
+  z-index: 1000;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -425,9 +332,8 @@ h1 {
   max-width: 600px;
   margin-top: 6rem;
   height: calc(100vh - 8rem);
-  overflow-y: auto; 
+  overflow-y: auto;
   padding: 1rem;
-  scroll-behavior: smooth;
 }
 
 .loading-messages, .no-messages {
@@ -543,104 +449,6 @@ h1 {
   transform: translateY(-1px);
 }
 
-/* 菜单按钮样式 */
-.menu-button {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 30px;
-  height: 30px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  margin-right: 1rem;
-}
-
-.menu-button .menu-icon {
-  width: 20px;
-  height: 2px;
-  background-color: #333;
-  margin: 2px 0;
-  transition: 0.3s;
-}
-
-.menu-icon {
-  width: 20px;
-  height: 2px;
-  background-color: #333;
-  margin: 2px 0;
-  transition: 0.3s;
-}
-
-/* 菜单项中的图标样式 */
-.menu-item-icon {
-  margin-right: 0.8rem;
-  font-size: 1.2em;
-  width: 1.5em;
-  text-align: center;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* 侧边栏样式 */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -250px;
-  width: 250px;
-  height: 100vh;
-  background-color: white;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  transition: left 0.3s ease;
-  z-index: 1001;
-}
-
-.sidebar-active {
-  left: 0 !important;
-}
-
-.sidebar-content {
-  padding: 2rem;
-}
-
-.sidebar-content h3 {
-  margin-top: 0;
-  color: #333;
-}
-
-.menu-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu-list li {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.menu-list li:hover {
-  background-color: #f5f5f5;
-}
-
-/* 遮罩层样式 */
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0,0,0,0.5);
-  z-index: 1000;
-}
-
-
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -656,11 +464,6 @@ h1 {
 @media (max-width: 768px) {
   .header {
     padding: 0.8rem 1rem;
-  }
-
-  .sidebar {
-    width: 200px;
-    left: -200px;
   }
 
   h1 {
