@@ -138,11 +138,11 @@ const handleLogin = async () => {
       router.push('/messages');
     } else {      
       errorMessage.value = data.detail || '登入失敗';
-      showNotification('使用者名稱和密码不能为空', 'error');
+      showNotification(data.detail || '登入失敗', 'error');
     }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '登入過程發生錯誤';
-    showNotification(error instanceof Error ? error.message : '登入過程發生錯誤', 'error');
+    // showNotification(error instanceof Error ? error.message : '登入過程發生錯誤', 'error');
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
     isLoading.value = false;
