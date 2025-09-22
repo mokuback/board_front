@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import liff from '@line/liff';
 import { useRouter } from 'vue-router'; 
 import axios from '../services/axiosInterceptor';
@@ -73,7 +73,12 @@ const statusMessage = ref<string>('');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const responseData = ref('');
-const isLineLoggedIn = ref(false); 
+
+// 从 localStorage 读取 LINE 登录状态，并创建计算属性
+const isLineLoggedIn = computed({
+  get: () => localStorage.getItem('isLineLoggedIn') === 'true',
+  set: (value) => localStorage.setItem('isLineLoggedIn', String(value))
+});
 
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
@@ -161,8 +166,7 @@ const handleLogin = async () => {
 };
 
 onMounted(async () => {
-  showNotification(JSON.stringify(isLineLoggedIn) + JSON.stringify(liff.isLoggedIn()),'success');
-  // 检查是否是 LINE 登录回调
+  // 只需检查是否是 LINE 登录回调
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
   const state = urlParams.get('state');
@@ -170,23 +174,14 @@ onMounted(async () => {
   // 如果是 LINE 登录回调或者已经在 LINE 客户端中，初始化 LIFF
   if (code || state || liff.isInClient()) {
     await initializeLiff();
+  }
+});
+
+watch(isLineLoggedIn, async (newValue) => {
+  if (newValue) {
+    // 获取用户资料
   } else {
-    // 检查 LINE 登录状态
-    try {
-      isLoading.value = true; // 开始加载时设置状态
-      await liff.init({ liffId: '2008056298-jBr2y22v' });
-      if (liff.isLoggedIn()) {
-        isLineLoggedIn.value = true;
-        await initializeLiff();
-      } else {
-        isLineLoggedIn.value = false;
-      }
-    } catch (err) {
-      console.error('LIFF initialization failed', err);
-      isLineLoggedIn.value = false;
-    } finally {
-      isLoading.value = false; // 结束加载时重置状态
-    }
+    // 清除用户资料
   }
 });
 </script>
