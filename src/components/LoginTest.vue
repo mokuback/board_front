@@ -35,13 +35,6 @@
     <button @click="handleLogin" :disabled="isLoading">
       {{ isLoading ? '登入中...' : '登入' }}
     </button>
-      <button 
-        v-if="!isLineLoggedIn" 
-        class="line-id-btn" 
-        @click="initializeLiff"
-      >
-        LINE ID
-      </button>    
    
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
@@ -52,17 +45,14 @@
       <pre>{{ responseData }}</pre>
     </div>
     <router-view></router-view>
-    <LoadingOverlay :isVisible="isLoading" message="處理中..." />  
   </div> 
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import liff from '@line/liff';
 import { useRouter } from 'vue-router'; 
 import axios from '../services/axiosInterceptor';
-import LoadingOverlay from './LoadingOverlay.vue';
-import { showNotification } from '../services/notificationService';
 
 const router = useRouter();
 const username = ref('');
@@ -74,18 +64,8 @@ const isLoading = ref(false);
 const errorMessage = ref('');
 const responseData = ref('');
 
-// 从 localStorage 读取 LINE 登录状态，并创建计算属性
-const isLineLoggedIn = computed({
-  get: () => localStorage.getItem('isLineLoggedIn') === 'true',
-  set: (value) => localStorage.setItem('isLineLoggedIn', String(value))
-});
-
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
-    // 如果已经在加载中，直接返回
-  if (isLoading.value) return;
-
-  isLoading.value = true;  
   try {
     await liff.init({ liffId: '2008056298-jBr2y22v' });
     
@@ -95,7 +75,6 @@ const initializeLiff = async () => {
       displayName.value = profile.displayName;
       pictureUrl.value = profile.pictureUrl || '';
       statusMessage.value = profile.statusMessage || '';
-      isLineLoggedIn.value = true;
     } else {
       liff.login();
     }
@@ -111,7 +90,6 @@ const initializeLiff = async () => {
 const handleLineLogout = () => {
   if (liff.isLoggedIn()) {
     liff.logout();
-    isLineLoggedIn.value = false;
   }
   // 清除 LINE 相关信息
   username.value = '';
@@ -124,7 +102,7 @@ const handleLineLogout = () => {
 const handleLogin = async () => {
   // 表单验证
   if (!username.value || !password.value) {
-    errorMessage.value = '使用者名稱和密碼不能為空';
+    errorMessage.value = '用户名和密码不能为空';
     return;
   }
 
@@ -155,38 +133,23 @@ const handleLogin = async () => {
       // 跳转到留言板
       router.push('/messages');
     } else {      
-      errorMessage.value = data.detail || '登入失敗，請檢查帳號密碼';
+      errorMessage.value = data.detail || '登录失败';
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '登入過程發生錯誤';
+    errorMessage.value = error instanceof Error ? error.message : '登录过程中发生错误';
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
     isLoading.value = false;
   }
 };
 
-onMounted(async () => {
-  // 只需检查是否是 LINE 登录回调
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  const state = urlParams.get('state');
-  
-  // 如果是 LINE 登录回调或者已经在 LINE 客户端中，初始化 LIFF
-  if (code || state || liff.isInClient()) {
-    await initializeLiff();
-  }
-});
-
-watch(isLineLoggedIn, async (newValue) => {
-  if (newValue) {
-    // 获取用户资料
-  } else {
-    // 清除用户资料
-  }
+onMounted(() => {
+  //initializeLiff();
 });
 </script>
 
 <style scoped>
+/* 保留原有的基础样式 */
 .login-container {
   max-width: 500px;
   margin: 0 auto;
@@ -196,6 +159,7 @@ watch(isLineLoggedIn, async (newValue) => {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+/* 新增 LINE 讯息区块样式 */
 .line-info {
   background: linear-gradient(135deg, #00C300 0%, #00B900 100%);
   color: white;
