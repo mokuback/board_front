@@ -35,6 +35,13 @@
     <button @click="handleLogin" :disabled="isLoading">
       {{ isLoading ? '登入中...' : '登入' }}
     </button>
+      <button 
+        v-if="!isLineLoggedIn" 
+        class="line-id-btn" 
+        @click="initializeLiff"
+      >
+        LINE ID
+      </button>    
    
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
@@ -63,6 +70,7 @@ const statusMessage = ref<string>('');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const responseData = ref('');
+const isLineLoggedIn = ref(false); 
 
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
@@ -75,6 +83,7 @@ const initializeLiff = async () => {
       displayName.value = profile.displayName;
       pictureUrl.value = profile.pictureUrl || '';
       statusMessage.value = profile.statusMessage || '';
+      isLineLoggedIn.value = true;
     } else {
       liff.login();
     }
@@ -90,6 +99,7 @@ const initializeLiff = async () => {
 const handleLineLogout = () => {
   if (liff.isLoggedIn()) {
     liff.logout();
+    isLineLoggedIn.value = false;
   }
   // 清除 LINE 相关信息
   username.value = '';
@@ -102,7 +112,7 @@ const handleLineLogout = () => {
 const handleLogin = async () => {
   // 表单验证
   if (!username.value || !password.value) {
-    errorMessage.value = '用户名和密码不能为空';
+    errorMessage.value = '使用者名稱和密碼不能為空';
     return;
   }
 
@@ -133,10 +143,10 @@ const handleLogin = async () => {
       // 跳转到留言板
       router.push('/messages');
     } else {      
-      errorMessage.value = data.detail || '登录失败';
+      errorMessage.value = data.detail || '登入失敗，請檢查帳號密碼';
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '登录过程中发生错误';
+    errorMessage.value = error instanceof Error ? error.message : '登入過程發生錯誤';
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
     isLoading.value = false;
@@ -144,7 +154,13 @@ const handleLogin = async () => {
 };
 
 onMounted(() => {
-  initializeLiff();
+  // 检查 LINE 登录状态
+  if (liff.isInClient() || liff.isLoggedIn()) {
+    isLineLoggedIn.value = true;
+    initializeLiff();
+  } else {
+    isLineLoggedIn.value = false;
+  }
 });
 </script>
 
