@@ -52,6 +52,7 @@
       <pre>{{ responseData }}</pre>
     </div>
     <router-view></router-view>
+    <LoadingOverlay :isVisible="isLoading" message="處理中..." />  
   </div> 
 </template>
 
@@ -60,6 +61,7 @@ import { ref, onMounted } from 'vue';
 import liff from '@line/liff';
 import { useRouter } from 'vue-router'; 
 import axios from '../services/axiosInterceptor';
+import LoadingOverlay from './LoadingOverlay.vue';
 
 const router = useRouter();
 const username = ref('');
@@ -74,6 +76,10 @@ const isLineLoggedIn = ref(false);
 
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
+    // 如果已经在加载中，直接返回
+  if (isLoading.value) return;
+
+  isLoading.value = true;  
   try {
     await liff.init({ liffId: '2008056298-jBr2y22v' });
     
@@ -165,6 +171,7 @@ onMounted(async () => {
   } else {
     // 检查 LINE 登录状态
     try {
+      isLoading.value = true; // 开始加载时设置状态
       await liff.init({ liffId: '2008056298-jBr2y22v' });
       if (liff.isLoggedIn()) {
         isLineLoggedIn.value = true;
@@ -175,13 +182,14 @@ onMounted(async () => {
     } catch (err) {
       console.error('LIFF initialization failed', err);
       isLineLoggedIn.value = false;
+    } finally {
+      isLoading.value = false; // 结束加载时重置状态
     }
   }
 });
 </script>
 
 <style scoped>
-/* 保留原有的基础样式 */
 .login-container {
   max-width: 500px;
   margin: 0 auto;
@@ -191,7 +199,6 @@ onMounted(async () => {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* 新增 LINE 讯息区块样式 */
 .line-info {
   background: linear-gradient(135deg, #00C300 0%, #00B900 100%);
   color: white;
