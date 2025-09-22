@@ -53,6 +53,7 @@ import { ref, onMounted } from 'vue';
 import liff from '@line/liff';
 import { useRouter } from 'vue-router'; 
 import axios from '../services/axiosInterceptor';
+import { showNotification } from '../services/notificationService';
 
 const router = useRouter();
 const username = ref('');
@@ -80,6 +81,7 @@ const initializeLiff = async () => {
     }
   } catch (err) {
     console.error('LIFF initialization failed', err);
+    showNotification('獲取 LINE 用户訊息失敗', 'error');
     errorMessage.value = '獲取 LINE 用户訊息失敗';
   } finally {
     isLoading.value = false;
@@ -102,7 +104,9 @@ const handleLineLogout = () => {
 const handleLogin = async () => {
   // 表单验证
   if (!username.value || !password.value) {
-    errorMessage.value = '用户名和密码不能为空';
+    errorMessage.value = '使用者名稱和密码不能为空';
+    showNotification('使用者名稱和密码不能为空', 'error');
+    
     return;
   }
 
@@ -133,10 +137,12 @@ const handleLogin = async () => {
       // 跳转到留言板
       router.push('/messages');
     } else {      
-      errorMessage.value = data.detail || '登录失败';
+      errorMessage.value = data.detail || '登入失敗';
+      showNotification('使用者名稱和密码不能为空', 'error');
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '登录过程中发生错误';
+    errorMessage.value = error instanceof Error ? error.message : '登入過程發生錯誤';
+    showNotification(error instanceof Error ? error.message : '登入過程發生錯誤', 'error');
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
     isLoading.value = false;
