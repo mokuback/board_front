@@ -153,13 +153,29 @@ const handleLogin = async () => {
   }
 };
 
-onMounted(() => {
-  // 检查 LINE 登录状态
-  if (liff.isInClient() || liff.isLoggedIn()) {
-    isLineLoggedIn.value = true;
-    initializeLiff();
+onMounted(async () => {
+  // 检查是否是 LINE 登录回调
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+  
+  // 如果是 LINE 登录回调或者已经在 LINE 客户端中，初始化 LIFF
+  if (code || state || liff.isInClient()) {
+    await initializeLiff();
   } else {
-    isLineLoggedIn.value = false;
+    // 检查 LINE 登录状态
+    try {
+      await liff.init({ liffId: '2008056298-jBr2y22v' });
+      if (liff.isLoggedIn()) {
+        isLineLoggedIn.value = true;
+        await initializeLiff();
+      } else {
+        isLineLoggedIn.value = false;
+      }
+    } catch (err) {
+      console.error('LIFF initialization failed', err);
+      isLineLoggedIn.value = false;
+    }
   }
 });
 </script>
