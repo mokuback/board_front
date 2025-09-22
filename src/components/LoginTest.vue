@@ -62,6 +62,7 @@ import liff from '@line/liff';
 import { useRouter } from 'vue-router'; 
 import axios from '../services/axiosInterceptor';
 import LoadingOverlay from './LoadingOverlay.vue';
+import { showNotification } from '../services/notificationService';
 
 const router = useRouter();
 const username = ref('');
@@ -160,6 +161,7 @@ const handleLogin = async () => {
 };
 
 onMounted(async () => {
+  showNotification(JSON.stringify(isLineLoggedIn) + JSON.stringify(liff.isLoggedIn()),'success');
   // 检查是否是 LINE 登录回调
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');

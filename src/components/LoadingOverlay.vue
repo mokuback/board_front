@@ -19,7 +19,7 @@ const props = defineProps({
   },
   message: {
     type: String,
-    default: '处理中...'
+    default: '處理中...'
   }
 });
 </script>
