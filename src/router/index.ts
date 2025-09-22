@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Login from '../components/Login.vue';
 import LoginTest from '../components/LoginTest.vue';
 import MessageBoard from '../components/MessageBoard.vue';
+import TaskBoard from '../components/TaskBoard.vue';
 
 const routes = [
     // {
@@ -19,6 +19,11 @@ const routes = [
         name: 'MessageBoard',
         component: MessageBoard,
         meta: { requiresAuth: true }
+    },
+    {
+        path: '/task',
+        name: 'TaskBoard',
+        component: TaskBoard,
     }
 
 ];

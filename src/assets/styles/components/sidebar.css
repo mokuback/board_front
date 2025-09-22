@@ -1,0 +1,104 @@
+/* 菜单按钮样式 */
+.menu-button {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 1rem;
+}
+
+.menu-button .menu-icon {
+    width: 20px;
+    height: 2px;
+    background-color: #333;
+    margin: 2px 0;
+    transition: 0.3s;
+}
+
+.menu-icon {
+    width: 20px;
+    height: 2px;
+    background-color: #333;
+    margin: 2px 0;
+    transition: 0.3s;
+}
+
+/* 菜单项中的图标样式 */
+.menu-item-icon {
+    margin-right: 0.8rem;
+    font-size: 1.2em;
+    width: 1.5em;
+    text-align: center;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    height: 100vh;
+    background-color: white;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: left 0.3s ease;
+    z-index: 1001;
+}
+
+.sidebar-active {
+    left: 0 !important;
+}
+
+.sidebar-content {
+    padding: 2rem;
+}
+
+.sidebar-content h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-list li {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.menu-list li:hover {
+    background-color: #f5f5f5;
+}
+
+/* 遮罩层样式 */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+        left: -200px;
+    }
+}
