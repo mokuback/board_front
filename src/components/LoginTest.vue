@@ -76,7 +76,7 @@ const errorMessage = ref('');
 const responseData = ref('');
 
 const handleLineLogin = () => {
-
+  initializeLiff();
 };
 
 // 初始化 LIFF 并获取用户资料
