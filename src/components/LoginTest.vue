@@ -1,8 +1,8 @@
 <template>
   <div class="login-container">
     <h2>使用者登錄</h2>
-    <div v-if="profile" class="line-info">
-        <p>LINE ID: {{ profile.value.userId }}</p>
+    <div v-if="displayName" class="line-info">
+        <p>LINE ID: {{ username }}</p>
         <p>顯示名稱: {{ displayName }}</p>
         <div class="avatar" v-if="pictureUrl">
           <img :src="pictureUrl" alt="使用者頭像" />
@@ -66,10 +66,9 @@ import { showNotification } from '../services/notificationService';
 import { createApiError } from '../services/errorService';
 
 const router = useRouter();
-const profile = ref<any>(null);
 const username = ref('');
 const password = ref('');
-const displayName = ref('測試');
+const displayName = ref('');
 const pictureUrl = ref<string>('');
 const statusMessage = ref<string>('');
 const isLoading = ref(false);
@@ -84,14 +83,14 @@ const handleLineLogin = () => {
 const initializeLiff = async () => {
   isLoading.value = true;
   try {
-    await liff.init({ liffId: '2008056298-jBr2y22v' });
+    await liff.init({ liffId: import.meta.env.VITE_LIFF_ID });
     
     if (liff.isLoggedIn()) {
-      profile.value = await liff.getProfile();
-      username.value = profile.value.userId;
-      displayName.value = profile.value.displayName;
-      pictureUrl.value = profile.value.pictureUrl || '';
-      statusMessage.value = profile.value.statusMessage || '';
+      const profile = await liff.getProfile();
+      username.value = profile.userId;
+      displayName.value = profile.displayName;
+      pictureUrl.value = profile.pictureUrl || '';
+      statusMessage.value = profile.statusMessage || '';
     } else {
       liff.login();
     }
@@ -131,8 +130,8 @@ const handleLogin = async () => {
   responseData.value = '';
 
   try {
-    // 发送登录请求到后端
-    const response = await axios.post('/token', {
+      // 发送登录请求到后端
+      const response = await axios.post('/token', {
       username: username.value,
       password: password.value,
       displayname: displayName.value
@@ -182,7 +181,6 @@ onMounted(() => {
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
-
 
 .button-container {
   display: flex;
