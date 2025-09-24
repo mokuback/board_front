@@ -153,28 +153,10 @@ const handleLogin = async () => {
   }
 };
 
-// onMounted(() => {
-//   initializeLiff();
-// });
-
-onMounted(async () => {
-  try {
-    // 先检查是否已经登录
-    if (liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      username.value = profile.userId;
-      displayName.value = profile.displayName;
-      pictureUrl.value = profile.pictureUrl || '';
-      statusMessage.value = profile.statusMessage || '';
-    } else {
-      // 未登录才进行初始化
-      await initializeLiff();
-    }
-  } catch (err) {
-    console.error('LIFF 状态检查失败', err);
-    showNotification('檢查 LINE 登入狀態失敗', 'error');
-  }
+onMounted(() => {
+  initializeLiff();
 });
+
 </script>
 
 <style scoped>
