@@ -1,6 +1,6 @@
 <template>
   <div class="login-container">
-    <h2>使用者登錄</h2>
+    <h2>使用者登錄</h2>如果是line已登
     <div v-if="displayName" class="line-info">
         <p>LINE ID: {{ username }}</p>
         <p>顯示名稱: {{ displayName }}</p>
@@ -18,6 +18,7 @@
         v-model="username" 
         placeholder="請輸入使用者名稱"
         @keyup.enter="handleLogin"
+        :disabled="displayName ? true : false"
       >
     </div>
     
@@ -134,7 +135,7 @@ const handleLogin = async () => {
       const response = await axios.post('/token', {
       username: username.value,
       password: password.value,
-      displayname: displayName.value
+      displayname: displayName.value || '訪客'
     });
 
     const data = response.data;
@@ -259,6 +260,11 @@ input {
   border: 1px solid #ddd;
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
 }
 
 button {
