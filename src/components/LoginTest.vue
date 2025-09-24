@@ -168,7 +168,7 @@ const handleLogin = async () => {
 };
 
 onMounted(() => {
-  //initializeLiff();
+  initializeLiff();
 });
 
 </script>
