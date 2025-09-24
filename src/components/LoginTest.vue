@@ -54,6 +54,7 @@ import liff from '@line/liff';
 import { useRouter } from 'vue-router'; 
 import axios from '../services/axiosInterceptor';
 import { showNotification } from '../services/notificationService';
+import { createApiError } from '../services/errorService';
 
 const router = useRouter();
 const username = ref('');
@@ -67,6 +68,7 @@ const responseData = ref('');
 
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
+  isLoading.value = true;
   try {
     await liff.init({ liffId: '2008056298-jBr2y22v' });
     
@@ -141,7 +143,9 @@ const handleLogin = async () => {
       showNotification(data.detail || '登入失敗', 'error');
     }
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '登入過程發生錯誤';
+    const apiError = createApiError(error);
+    errorMessage.value = apiError.details?.detail || '登入過程發生錯誤';
+    //errorMessage.value = error instanceof Error ? error.message : '登入過程發生錯誤';
     // showNotification(error instanceof Error ? error.message : '登入過程發生錯誤', 'error');
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
@@ -149,8 +153,27 @@ const handleLogin = async () => {
   }
 };
 
-onMounted(() => {
-  //initializeLiff();
+// onMounted(() => {
+//   initializeLiff();
+// });
+
+onMounted(async () => {
+  try {
+    // 先检查是否已经登录
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      username.value = profile.userId;
+      displayName.value = profile.displayName;
+      pictureUrl.value = profile.pictureUrl || '';
+      statusMessage.value = profile.statusMessage || '';
+    } else {
+      // 未登录才进行初始化
+      await initializeLiff();
+    }
+  } catch (err) {
+    console.error('LIFF 状态检查失败', err);
+    showNotification('檢查 LINE 登入狀態失敗', 'error');
+  }
 });
 </script>
 
