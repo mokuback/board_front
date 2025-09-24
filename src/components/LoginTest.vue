@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <h2>使用者登錄</h2>
-    <div v-if="statusMessage" class="line-info">
+    <div v-if="displayName" class="line-info">
         <p>LINE ID: {{ username }}</p>
         <p>顯示名稱: {{ displayName }}</p>
         <div class="avatar" v-if="pictureUrl">
@@ -32,9 +32,18 @@
       >
     </div>
     
-    <button @click="handleLogin" :disabled="isLoading">
-      {{ isLoading ? '登入中...' : '登入' }}
-    </button>
+    <div class="button-container">
+      <button @click="handleLogin" :disabled="isLoading" class="login-btn">
+        {{ isLoading ? '登入中...' : '登入' }}
+      </button>
+      <button 
+        v-if="!displayName || displayName === ''" 
+        @click="handleLineLogin" 
+        class="line-btn"
+      >
+        LINE
+      </button>
+    </div>
    
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
@@ -65,6 +74,10 @@ const statusMessage = ref<string>('');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const responseData = ref('');
+
+const handleLineLogin = () => {
+
+};
 
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
@@ -160,7 +173,12 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 保留原有的基础样式 */
+.button-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 .login-container {
   max-width: 500px;
   margin: 0 auto;
@@ -170,7 +188,16 @@ onMounted(() => {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* 新增 LINE 讯息区块样式 */
+.login-btn {
+  flex: 1;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 .line-info {
   background: linear-gradient(135deg, #00C300 0%, #00B900 100%);
   color: white;
@@ -183,6 +210,20 @@ onMounted(() => {
 .line-info p {
   margin: 10px 0;
   font-size: 16px;
+}
+
+.line-btn {
+  padding: 10px 20px;
+  background-color: #00C300;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.line-btn:hover {
+  background-color: #00B900;
 }
 
 .avatar {
