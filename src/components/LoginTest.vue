@@ -179,23 +179,25 @@ onMounted(() => {
   margin-top: 10px;
 }
 
-.login-container {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
 .login-btn {
-  flex: 1;
+  flex: 1;  /* 占据剩余空间 */
   padding: 10px;
   background-color: #4CAF50;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.line-btn {
+  width: auto;  /* 自动适应内容宽度 */
+  padding: 10px 20px;  /* 左右内边距固定 */
+  background-color: #00C300;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;  /* 防止文字换行 */
 }
 
 .line-info {
@@ -210,16 +212,6 @@ onMounted(() => {
 .line-info p {
   margin: 10px 0;
   font-size: 16px;
-}
-
-.line-btn {
-  padding: 10px 20px;
-  background-color: #00C300;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 .line-btn:hover {
