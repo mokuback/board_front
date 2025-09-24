@@ -180,6 +180,10 @@ const handleLoginRecords = () => {
   showNotification("login records", 'success');
 };
 
+const handleLogout = () => {
+  logout();
+};
+
 // 检查登录状态
 onMounted(async () => {
   const token = localStorage.getItem('token');
@@ -241,6 +245,9 @@ onUnmounted(() => {
               <li v-if="isAdmin" @click="handleLoginRecords">
                 <span class="menu-item-icon">📋</span>登入記錄
               </li>
+              <li @click="handleLogout">
+                <span class="menu-item-icon">🚪</span>離開
+              </li>              
             </ul>
           </div>
         </div>

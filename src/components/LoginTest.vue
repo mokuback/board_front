@@ -1,8 +1,8 @@
 <template>
   <div class="login-container">
     <h2>使用者登錄</h2>
-    <div v-if="displayName" class="line-info">
-        <p>LINE ID: {{ username }}</p>
+    <div v-if="profile" class="line-info">
+        <p>LINE ID: {{ profile.value.userId }}</p>
         <p>顯示名稱: {{ displayName }}</p>
         <div class="avatar" v-if="pictureUrl">
           <img :src="pictureUrl" alt="使用者頭像" />
@@ -66,6 +66,7 @@ import { showNotification } from '../services/notificationService';
 import { createApiError } from '../services/errorService';
 
 const router = useRouter();
+const profile = ref<any>(null);
 const username = ref('');
 const password = ref('');
 const displayName = ref('測試');
@@ -86,11 +87,11 @@ const initializeLiff = async () => {
     await liff.init({ liffId: '2008056298-jBr2y22v' });
     
     if (liff.isLoggedIn()) {
-      const profile = await liff.getProfile();
-      username.value = profile.userId;
-      displayName.value = profile.displayName;
-      pictureUrl.value = profile.pictureUrl || '';
-      statusMessage.value = profile.statusMessage || '';
+      profile.value = await liff.getProfile();
+      username.value = profile.value.userId;
+      displayName.value = profile.value.displayName;
+      pictureUrl.value = profile.value.pictureUrl || '';
+      statusMessage.value = profile.value.statusMessage || '';
     } else {
       liff.login();
     }
@@ -167,12 +168,22 @@ const handleLogin = async () => {
 };
 
 onMounted(() => {
-  initializeLiff();
+  //initializeLiff();
 });
 
 </script>
 
 <style scoped>
+.login-container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
 .button-container {
   display: flex;
   gap: 10px;
