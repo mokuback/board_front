@@ -1,6 +1,6 @@
 <template>
   <div class="login-container">
-    <h2>使用者登錄</h2>如果是line已登
+    <h2>使用者登錄</h2>
     <div v-if="displayName" class="line-info">
         <p>LINE ID: {{ username }}</p>
         <p>顯示名稱: {{ displayName }}</p>
