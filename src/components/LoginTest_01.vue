@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <h2>使用者登錄</h2>
-    <div v-if="statusMessage" class="line-info">
+    <div v-if="displayName" class="line-info">
         <p>LINE ID: {{ username }}</p>
         <p>顯示名稱: {{ displayName }}</p>
         <div class="avatar" v-if="pictureUrl">
@@ -18,6 +18,7 @@
         v-model="username" 
         placeholder="請輸入使用者名稱"
         @keyup.enter="handleLogin"
+        :disabled="displayName ? true : false"
       >
     </div>
     
@@ -32,9 +33,18 @@
       >
     </div>
     
-    <button @click="handleLogin" :disabled="isLoading">
-      {{ isLoading ? '登入中...' : '登入' }}
-    </button>
+    <div class="button-container">
+      <button @click="handleLogin" class="login-btn">
+        登入
+      </button>
+      <button 
+        v-if="!displayName || displayName === ''" 
+        @click="handleLineLogin" 
+        class="line-btn"
+      >
+        LINE
+      </button>
+    </div>
    
     <div v-if="errorMessage" class="error-message">
       {{ errorMessage }}
@@ -55,22 +65,27 @@ import { useRouter } from 'vue-router';
 import axios from '../services/axiosInterceptor';
 import { showNotification } from '../services/notificationService';
 import { createApiError } from '../services/errorService';
+import { showLoading, hideLoading, useLoading } from '../services/loadingService';
 
 const router = useRouter();
 const username = ref('');
 const password = ref('');
-const displayName = ref('測試');
+const displayName = ref('');
 const pictureUrl = ref<string>('');
 const statusMessage = ref<string>('');
-const isLoading = ref(false);
+// const isLoading = ref(false);
 const errorMessage = ref('');
 const responseData = ref('');
 
+const handleLineLogin = () => {
+  initializeLiff();
+};
+
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
-  isLoading.value = true;
+  showLoading('正在獲取 LINE 用戶資訊，請稍候...')
   try {
-    await liff.init({ liffId: '2008056298-jBr2y22v' });
+    await liff.init({ liffId: import.meta.env.VITE_LIFF_ID });
     
     if (liff.isLoggedIn()) {
       const profile = await liff.getProfile();
@@ -86,7 +101,7 @@ const initializeLiff = async () => {
     showNotification('獲取 LINE 用户訊息失敗', 'error');
     errorMessage.value = '獲取 LINE 用户訊息失敗';
   } finally {
-    isLoading.value = false;
+    hideLoading();
   }
 };
 
@@ -112,16 +127,16 @@ const handleLogin = async () => {
     return;
   }
 
-  isLoading.value = true;
+  showLoading('正在登入，請稍候...')
   errorMessage.value = '';
   responseData.value = '';
 
   try {
-    // 发送登录请求到后端
-    const response = await axios.post('/token', {
+      // 发送登录请求到后端
+      const response = await axios.post('/token', {
       username: username.value,
       password: password.value,
-      displayname: displayName.value
+      displayname: displayName.value || '訪客'
     });
 
     const data = response.data;
@@ -149,7 +164,7 @@ const handleLogin = async () => {
     // showNotification(error instanceof Error ? error.message : '登入過程發生錯誤', 'error');
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
-    isLoading.value = false;
+    hideLoading();
   }
 };
 
@@ -160,7 +175,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 保留原有的基础样式 */
 .login-container {
   max-width: 500px;
   margin: 0 auto;
@@ -170,7 +184,33 @@ onMounted(() => {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* 新增 LINE 讯息区块样式 */
+.button-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.login-btn {
+  flex: 1;  /* 占据剩余空间 */
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.line-btn {
+  width: auto;  /* 自动适应内容宽度 */
+  padding: 10px 20px;  /* 左右内边距固定 */
+  background-color: #00C300;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;  /* 防止文字换行 */
+}
+
 .line-info {
   background: linear-gradient(135deg, #00C300 0%, #00B900 100%);
   color: white;
@@ -183,6 +223,10 @@ onMounted(() => {
 .line-info p {
   margin: 10px 0;
   font-size: 16px;
+}
+
+.line-btn:hover {
+  background-color: #00B900;
 }
 
 .avatar {
@@ -217,6 +261,11 @@ input {
   border: 1px solid #ddd;
   border-radius: 4px;
   box-sizing: border-box;
+}
+
+input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
 }
 
 button {

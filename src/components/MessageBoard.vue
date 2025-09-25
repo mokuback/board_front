@@ -255,8 +255,6 @@ onUnmounted(() => {
         <!-- 添加遮罩层 -->
         <div v-if="showSidebar" class="sidebar-overlay" @click="toggleSidebar"></div>
 
-
-
         <div class="title-section">
           <h1>{{ appTitle }}</h1>
           <span class="display-name" @click="showUserId = !showUserId">
@@ -554,59 +552,6 @@ h1 {
   transform: translateY(-1px);
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .header {
-    padding: 0.8rem 1rem;
-  }
-
-  .messages-container {
-    margin-top: 2rem; /* 在移动设备上使用更小的间距 */
-  }
-
-  .sidebar {
-    width: 200px;
-    left: -200px;
-  }
-
-  h1 {
-    font-size: 1.4rem;
-  }
-
-  .display-name {
-    color: #666;
-    font-size: 1rem;
-    font-weight: normal;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    cursor: pointer;  
-  }
-
-  .countdown {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-
-  .logout-button {
-    padding: 0.6rem 1.2rem;
-    font-size: 0.9rem;
-  }
-}
-
 /* 新增样式：浮动按钮 */
 .float-button {
   position: fixed;
@@ -629,4 +574,154 @@ h1 {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 手机设备专用CSS */
+@media (max-width: 768px) {
+  /* 全局样式调整 */
+  body {
+    font-size: 14px; /* 减小全局字体大小，适应小屏幕 */
+    line-height: 1.5; /* 增加行高，提高可读性 */
+  }
+  
+  /* 容器调整 */
+  .container {
+    width: 100%;
+    padding: 0 10px; /* 减小内边距，利用更多空间 */
+  }
+  
+  /* 标题样式 */
+  .title {
+    font-size: 1.5rem; /* 减小标题字体大小 */
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  /* 留言板容器 */
+  .messages-container {
+    margin-top: 2rem; /* 减小顶部间距 */
+    height: calc(100vh - 6rem); /* 调整高度，考虑更小的标题栏 */
+    padding: 0.8rem; /* 减小内边距 */
+    border-radius: 8px; /* 稍微减小圆角 */
+  }
+  
+  /* 留言项样式 */
+  .message-item {
+    padding: 0.8rem; /* 减小内边距 */
+    margin-bottom: 0.8rem; /* 减小间距 */
+    border-radius: 6px; /* 稍微减小圆角 */
+  }
+  
+  /* 用户名样式 */
+  .username {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* 留言内容样式 */
+  .message-content {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* 留言时间样式 */
+  .message-time {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+  }
+  
+  /* 输入区域样式 */
+  .input-area {
+    padding: 0.8rem;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  /* 输入框样式 */
+  .message-input {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+  
+  /* 按钮样式 */
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+  }
+  
+  .btn-primary {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+  }
+  
+  /* 表单元素间距 */
+  .form-group {
+    margin-bottom: 0.8rem;
+  }
+  
+  /* 标签样式 */
+  label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    display: block;
+  }
+  
+  /* 提示信息样式 */
+  .alert {
+    padding: 0.6rem;
+    margin-bottom: 0.8rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+  
+  /* 导航栏样式 */
+  .navbar {
+    padding: 0.5rem;
+  }
+  
+  .navbar-brand {
+    font-size: 1.2rem;
+  }
+  
+  /* 卡片样式 */
+  .card {
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .card-body {
+    padding: 0.8rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* 列表样式 */
+  .list-group-item {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+}
+
 </style>
