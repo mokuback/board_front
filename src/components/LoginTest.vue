@@ -2,7 +2,7 @@
   <div class="login-container">
     <h2>使用者登錄</h2>
     <div v-if="displayName" class="line-info">
-        <p>LINE ID: {{ username }}</p>
+        <!--<p>LINE ID: {{ username }}</p>-->
         <p>顯示名稱: {{ displayName }}</p>
         <div class="avatar" v-if="pictureUrl">
           <img :src="pictureUrl" alt="使用者頭像" />
@@ -317,17 +317,18 @@ pre {
 }
 
 .logout-line-btn {
-  background-color: #ff3333;
+  background-color: rgba(0, 179, 0, 0.7);
   color: white;
   border: none;
   padding: 8px 15px;
   border-radius: 4px;
   cursor: pointer;
   margin-top: 10px;
+  transition: background-color 0.3s ease;
 }
 
 .logout-line-btn:hover {
-  background-color: #e60000;
+  background-color: rgba(0, 179, 0, 0.5);
 }
 
 /* 响应式设计 */
