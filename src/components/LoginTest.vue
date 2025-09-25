@@ -176,12 +176,15 @@ onMounted(() => {
 
 <style scoped>
 .login-container {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 15px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
 }
 
 .button-container {
@@ -191,7 +194,7 @@ onMounted(() => {
 }
 
 .login-btn {
-  flex: 1;  /* 占据剩余空间 */
+  flex: 1;
   padding: 10px;
   background-color: #4CAF50;
   color: white;
@@ -201,14 +204,14 @@ onMounted(() => {
 }
 
 .line-btn {
-  width: auto;  /* 自动适应内容宽度 */
-  padding: 10px 20px;  /* 左右内边距固定 */
+  width: auto;
+  padding: 10px 20px;
   background-color: #00C300;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  white-space: nowrap;  /* 防止文字换行 */
+  white-space: nowrap;
 }
 
 .line-info {
@@ -230,20 +233,19 @@ onMounted(() => {
 }
 
 .avatar {
-  margin: 15px auto;
+  margin: 10px auto;
   text-align: center;
 }
 
 .avatar img {
-  width: 100px;
-  height: 100px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* 其他样式保持不变 */
 .form-group {
   margin-bottom: 15px;
   text-align: left;
@@ -313,4 +315,50 @@ pre {
   word-wrap: break-word;
   margin: 0;
 }
+
+.logout-line-btn {
+  background-color: #ff3333;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.logout-line-btn:hover {
+  background-color: #e60000;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 375px) {
+  .login-container {
+    padding: 10px;
+  }
+  
+  .form-group {
+    margin-bottom: 10px;
+  }
+  
+  .button-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .line-btn {
+    width: 100%;
+  }
+}
+
+@media screen and (min-width: 376px) {
+  .login-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+}
+
 </style>
