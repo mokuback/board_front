@@ -34,8 +34,8 @@
     </div>
     
     <div class="button-container">
-      <button @click="handleLogin" :disabled="isLoading" class="login-btn">
-        {{ isLoading ? '登入中...' : '登入' }}
+      <button @click="handleLogin" class="login-btn">
+        登入
       </button>
       <button 
         v-if="!displayName || displayName === ''" 
@@ -65,6 +65,7 @@ import { useRouter } from 'vue-router';
 import axios from '../services/axiosInterceptor';
 import { showNotification } from '../services/notificationService';
 import { createApiError } from '../services/errorService';
+import { showLoading, hideLoading, useLoading } from '../services/loadingService';
 
 const router = useRouter();
 const username = ref('');
@@ -72,7 +73,7 @@ const password = ref('');
 const displayName = ref('');
 const pictureUrl = ref<string>('');
 const statusMessage = ref<string>('');
-const isLoading = ref(false);
+// const isLoading = ref(false);
 const errorMessage = ref('');
 const responseData = ref('');
 
@@ -82,7 +83,7 @@ const handleLineLogin = () => {
 
 // 初始化 LIFF 并获取用户资料
 const initializeLiff = async () => {
-  isLoading.value = true;
+  showLoading('正在獲取 LINE 用戶資訊，請稍候...')
   try {
     await liff.init({ liffId: import.meta.env.VITE_LIFF_ID });
     
@@ -100,7 +101,7 @@ const initializeLiff = async () => {
     showNotification('獲取 LINE 用户訊息失敗', 'error');
     errorMessage.value = '獲取 LINE 用户訊息失敗';
   } finally {
-    isLoading.value = false;
+    hideLoading();
   }
 };
 
@@ -126,7 +127,7 @@ const handleLogin = async () => {
     return;
   }
 
-  isLoading.value = true;
+  showLoading('正在登入，請稍候...')
   errorMessage.value = '';
   responseData.value = '';
 
@@ -163,12 +164,12 @@ const handleLogin = async () => {
     // showNotification(error instanceof Error ? error.message : '登入過程發生錯誤', 'error');
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
-    isLoading.value = false;
+    hideLoading();
   }
 };
 
 onMounted(() => {
-  initializeLiff();
+  //initializeLiff();
 });
 
 </script>
