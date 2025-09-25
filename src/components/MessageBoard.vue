@@ -434,7 +434,7 @@ h1 {
 .messages-container {
   width: 100%;
   max-width: 600px;
-  margin-top: 6rem;
+  margin-top: 2rem;
   height: calc(100vh - 8rem);
   overflow-y: auto; 
   padding: 1rem;
@@ -569,6 +569,10 @@ h1 {
 @media (max-width: 768px) {
   .header {
     padding: 0.8rem 1rem;
+  }
+
+  .messages-container {
+    margin-top: 2rem; /* 在移动设备上使用更小的间距 */
   }
 
   .sidebar {
