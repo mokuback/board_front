@@ -317,7 +317,7 @@ pre {
 }
 
 .logout-line-btn {
-  background-color: rgba(0, 179, 0, 0.7);
+  background-color: rgba(0, 249, 0, 0.7);
   color: white;
   border: none;
   padding: 8px 15px;
@@ -328,7 +328,7 @@ pre {
 }
 
 .logout-line-btn:hover {
-  background-color: rgba(0, 179, 0, 0.5);
+  background-color: rgba(0, 249, 0, 0.5);
 }
 
 /* 响应式设计 */
