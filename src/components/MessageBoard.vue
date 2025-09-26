@@ -426,6 +426,51 @@ h1 {
   overflow-y: auto; 
   padding: 1rem;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+  scrollbar-width: thin; /* Firefox滚动条样式 */
+  scrollbar-color: #888 #f1f1f1; /* Firefox滚动条颜色 */
+
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.loading-messages::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-messages, .no-messages {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .loading-messages, .no-messages {
@@ -441,6 +486,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding: 0.5rem 0;
 }
 
 .message-card {
@@ -607,6 +653,11 @@ h1 {
   }
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 手机设备专用CSS */
 @media (max-width: 768px) {
   /* 全局样式调整 */
@@ -632,7 +683,7 @@ h1 {
   .messages-container {
     margin-top: 2rem; /* 减小顶部间距 */
     height: calc(100vh - 6rem); /* 调整高度，考虑更小的标题栏 */
-    padding: 0.8rem; /* 减小内边距 */
+    padding: 0.5rem; /* 减小内边距 */
     border-radius: 8px; /* 稍微减小圆角 */
   }
   
@@ -677,6 +728,10 @@ h1 {
     border-radius: 4px;
     border: 1px solid #ddd;
   }
+
+  .messages-list {
+    gap: 0.8rem;
+  }  
   
   /* 按钮样式 */
   .btn {
