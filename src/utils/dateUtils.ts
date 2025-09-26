@@ -1,11 +1,22 @@
-// src/utils/dateUtils.ts
-/**
- * 格式化日期时间
- * @param dateTimeString 日期时间字符串
- * @returns 格式化后的本地日期时间字符串
- */
 export const formatDateTime = (dateTimeString: string) => {
     const date = new Date(dateTimeString);
+
+    // 检查时间字符串是否包含时区信息
+    // 如果已经是本地时间（不包含'Z'或时区偏移），则不再添加偏移
+    if (!dateTimeString.includes('Z') && !dateTimeString.includes('+') && !dateTimeString.includes('-')) {
+        // 已经是本地时间，不需要添加偏移
+        return date.toLocaleString(import.meta.env.VITE_LOCALE, {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+    }
+
+    // 是UTC时间，需要添加偏移
     date.setHours(date.getHours() + Number(import.meta.env.VITE_TIME_OFFSET));
     return date.toLocaleString(import.meta.env.VITE_LOCALE, {
         timeZone: import.meta.env.VITE_TIMEZONE,
