@@ -239,11 +239,6 @@ onUnmounted(() => {
 
         <div class="title-section">
           <h1>{{ appTitle }}</h1>
-          <span class="display-name" @click="showUserId = !showUserId">
-            <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
-            {{ displayName }}
-            <span v-if="showUserId" class="user-id">({{ userId }})</span>
-          </span>
         </div>
         <button @click="logout" class="logout-button">登出</button>
       </div>
