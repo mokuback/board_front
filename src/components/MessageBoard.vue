@@ -707,18 +707,6 @@ h1 {
     padding: 0.8rem;
     font-size: 0.9rem;
   }
-
-  /* 对话框样式调整 */
-  .dialog-content {
-    width: 90%; /* 设置宽度为90%,两侧各留5%空间 */
-    margin: 0 auto; /* 居中显示 */
-    border-radius: 8px; /* 添加圆角 */
-  }
-  
-  /* 对话框容器样式 */
-  .dialog-container {
-    padding: 1rem; /* 添加内边距 */
-  }  
 }
 
 </style>
