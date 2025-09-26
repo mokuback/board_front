@@ -497,7 +497,7 @@ h1 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
-  max-width: 90%;
+  width: 90%;
   margin: 0 auto;
 }
 
@@ -781,8 +781,8 @@ h1 {
   
   /* 卡片样式 */
   .message-card {
-    max-width: 95%;  /* 在小屏幕上稍微放宽一点 */
-    padding: 1rem;   /* 减小内边距 */
+    width: 90%;  
+    padding: 1rem; 
   }
 
   .card {
@@ -817,8 +817,8 @@ h1 {
   }
 
   .message-card {
-    max-width: 100%;  /* 卡片占满宽度 */
-    padding: 0.8rem;  /* 减小卡片内边距 */
+    width: 90%;
+    padding: 0.8rem;
   }
 }
 </style>
