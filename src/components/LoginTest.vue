@@ -169,7 +169,7 @@ const handleLogin = async () => {
 };
 
 onMounted(() => {
-  initializeLiff();
+  //initializeLiff();
 });
 
 </script>
@@ -177,14 +177,16 @@ onMounted(() => {
 <style scoped>
 .login-container {
   max-width: 100%;
-  min-height: 100vh;
-  margin: 0;
+  margin: 0 auto;
   padding: 15px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   width: 100%;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .button-container {

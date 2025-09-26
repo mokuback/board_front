@@ -4,8 +4,10 @@ import { useRouter } from 'vue-router';
 import AddMessageDialog from './AddMessageDialog.vue';
 import PasswordSettingsDialog from './PasswordSettingsDialog.vue';
 import NotificationDialog from './NotificationDialog.vue';
+import LoginRecordsDialog from './LoginRecordsDialog.vue';
 import { showNotification } from '../services/notificationService';
 import { showLoading, hideLoading } from '../services/loadingService';
+import { formatDateTime } from '../utils/dateUtils';
 import axios from '../services/axiosInterceptor';
 
 
@@ -30,6 +32,7 @@ const isMessagesLoading = ref<boolean>(true);
 const showAddMessageDialog = ref(false);
 const showPasswordDialog = ref(false);
 const showNotificationDialog = ref(false);
+const showLoginRecordsDialog = ref(false);
 
 const appTitle = import.meta.env.VITE_APP_TITLE || 'Message Board';
 
@@ -132,34 +135,16 @@ const deleteMessage = async (messageId: number) => {
   }
 };
 
-// 日期时间格式化函数
-// const formatDateTime = (dateTimeString: string) => {
-//   const date = new Date(dateTimeString);
-//   return date.toLocaleString();
-// };
-
-// 日期时间格式化函数
-const formatDateTime = (dateTimeString: string) => {
-  const date = new Date(dateTimeString);
-  date.setHours(date.getHours() + Number(import.meta.env.VITE_TIME_OFFSET));
-  return date.toLocaleString(import.meta.env.VITE_LOCALE, {
-    timeZone: import.meta.env.VITE_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-};
-
 const handleSendNotification = () => {
   showNotificationDialog.value = true;
 };
 
 const handlePasswordSettings = () => {
   showPasswordDialog.value = true;
+};
+
+const handleLoginRecords = () => {
+   showLoginRecordsDialog.value = true;
 };
 
 const handleBasicSettings = () => {
@@ -176,9 +161,6 @@ const handleUserManagement = () => {
   showNotification("user management", 'success');
 };
 
-const handleLoginRecords = () => {
-  showNotification("login records", 'success');
-};
 
 const handleLogout = () => {
   logout();
@@ -311,6 +293,9 @@ onUnmounted(() => {
       <NotificationDialog
         v-model="showNotificationDialog"
       />    
+      <LoginRecordsDialog 
+        v-model="showLoginRecordsDialog"
+      />      
     </div>
   </div>
 </template>
@@ -722,6 +707,18 @@ h1 {
     padding: 0.8rem;
     font-size: 0.9rem;
   }
+
+  /* 对话框样式调整 */
+  .dialog-content {
+    width: 90%; /* 设置宽度为90%,两侧各留5%空间 */
+    margin: 0 auto; /* 居中显示 */
+    border-radius: 8px; /* 添加圆角 */
+  }
+  
+  /* 对话框容器样式 */
+  .dialog-container {
+    padding: 1rem; /* 添加内边距 */
+  }  
 }
 
 </style>
