@@ -316,6 +316,9 @@ onUnmounted(() => {
   gap: 1rem;
   flex: 1;
   justify-content: center;
+  padding: 0 2rem;
+  max-width: calc(100% - 100px);
+  margin: 0 auto;
 }
 
 .display-name {
@@ -333,6 +336,7 @@ h1 {
   font-size: 1.8rem;
   font-weight: bold;
   white-space: nowrap;
+  text-align: center;
 }
 
 .message-board {
@@ -664,6 +668,11 @@ h1 {
 /* 手机设备专用CSS */
 @media (max-width: 768px) {
   /* 全局样式调整 */
+  .title-section {
+    padding: 0 1rem;  /* 减小移动设备的内边距 */
+    max-width: calc(100% - 60px);  /* 调整移动设备的最大宽度 */
+  }
+
   body {
     font-size: 14px; /* 减小全局字体大小，适应小屏幕 */
     line-height: 1.5; /* 增加行高，提高可读性 */
@@ -808,6 +817,10 @@ h1 {
 }
 
 @media (max-width: 390px) {
+  .title-section {
+    padding: 0 0.8rem;  /* 进一步减小小屏幕设备的内边距 */
+    max-width: calc(100% - 40px);  /* 调整小屏幕设备的最大宽度 */
+  }  
   .message-board {
     padding: 5px;  /* 进一步减小内边距 */
   }
