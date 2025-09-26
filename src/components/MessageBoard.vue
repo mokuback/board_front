@@ -336,10 +336,11 @@ h1 {
 }
 
 .message-board {
-  width: 100vw;
+  width: 100vw; 
+  max-width: 100%;
   min-height: 100vh;
   background-color: #f5f5f5;
-  padding: 20px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -347,8 +348,8 @@ h1 {
 
 .user-info {
   width: 100%;
-  max-width: 600px;
-  margin-top: 2rem;
+  max-width: 100%;
+  margin-top: 1rem;
 }
 
 .header {
@@ -420,11 +421,11 @@ h1 {
 
 .messages-container {
   width: 100%;
-  max-width: 600px;
-  margin-top: 2rem;
-  height: calc(100vh - 8rem);
-  overflow-y: auto; 
-  padding: 1rem;
+  max-width: 100%;
+  margin-top: 1rem;
+  height: calc(100vh - 6rem);
+  overflow-y: auto;
+  padding: 0.5rem;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
   scrollbar-width: thin; /* Firefox滚动条样式 */
@@ -806,4 +807,18 @@ h1 {
   }
 }
 
+@media (max-width: 390px) {
+  .message-board {
+    padding: 5px;  /* 进一步减小内边距 */
+  }
+
+  .header {
+    padding: 0.5rem 1rem;  /* 减小头部内边距 */
+  }
+
+  .message-card {
+    max-width: 100%;  /* 卡片占满宽度 */
+    padding: 0.8rem;  /* 减小卡片内边距 */
+  }
+}
 </style>
