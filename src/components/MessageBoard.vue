@@ -277,6 +277,15 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- 顯示名稱：浮動 -->
+      <div class="floating-user-info">
+        <span class="display-name" @click="showUserId = !showUserId">
+          <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
+          {{ displayName }}
+          <span v-if="showUserId" class="user-id">({{ userId }})</span>
+        </span>
+      </div>      
+
       <!-- 新增：浮动按钮 -->
       <button class="float-button" @click="showAddMessageDialog = true">
         新增留言
@@ -558,6 +567,37 @@ h1 {
   background-color: #45a049;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.floating-user-info {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.floating-user-info:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.floating-user-info .display-name {
+  color: #666;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.floating-user-info .user-id {
+  font-size: 0.8rem;
+  color: #999;
 }
 
 @keyframes pulse {
