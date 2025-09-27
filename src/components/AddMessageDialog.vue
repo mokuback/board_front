@@ -114,7 +114,7 @@ const handleSubmit = async () => {
         
       const response = await axios.post('/messages/', formData);
 
-      if (response.data.ok) {
+      if (response.data.ok) {   
         handleClear();
         handleClose();
         emit('message-created');

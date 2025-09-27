@@ -11,7 +11,7 @@ import { formatDateTime } from '../utils/dateUtils';
 import axios from '../services/axiosInterceptor';
 
 
-const COUNTDOWN_SECONDS = 600;
+const COUNTDOWN_SECONDS = 300;
 
 const router = useRouter();
 const userId = ref<string>('');
@@ -96,14 +96,19 @@ const removeActivityListeners = () => {
 const fetchLatestMessages = async () => {
   isMessagesLoading.value = true;
   try {
-    const response = await axios.get('/messages/?limit=10');
+    const response = await axios.get('/messages/?limit=5');
     messages.value = response.data.sort((a: any, b: any) => 
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+
+      //最新的訊息在最下面
+      //new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      //最新的訊息在最上面
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
     // 使用 nextTick 确保DOM更新后再滚动
-    await nextTick();
-    scrollToBottom();     
+    // 以下是使用最新的訊息在最下面才啟用
+    // await nextTick();
+    // scrollToBottom();     
   } catch (error) {
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
@@ -123,7 +128,8 @@ const deleteMessage = async (messageId: number) => {
   try {
     const response = await axios.delete(`/messages/${messageId}`);
     if (response.data.ok) {
-      messages.value = messages.value.filter(msg => msg.id !== messageId);
+      //messages.value = messages.value.filter(msg => msg.id !== messageId);
+       await fetchLatestMessages(); // 重新获取最新消息
       showNotification('删除留言成功', 'success');
     } else {
       showNotification('删除留言失敗', 'error');
@@ -195,7 +201,7 @@ onUnmounted(() => {
 
 <template>
   <div class="message-board">
-    <div v-if="isLoading" class="loading">加载中...</div>
+    <div v-if="isLoading" class="loading">載入中...</div>
     <div v-else class="user-info">
       <div class="header">
         <button class="menu-button" @click="toggleSidebar">
@@ -246,8 +252,8 @@ onUnmounted(() => {
       
       <!-- 可滚动消息区域 -->
       <div ref="messagesContainer" class="messages-container">
-        <div v-if="isMessagesLoading" class="loading-messages">加载消息中...</div>
-        <div v-else-if="messages.length === 0" class="no-messages">暂无留言</div>
+        <div v-if="isMessagesLoading" class="loading-messages">獲取訊息中...</div>
+        <div v-else-if="messages.length === 0" class="no-messages">暫無留言</div>
         <div v-else class="messages-list">
           <div v-for="message in messages" :key="message.id" class="message-card">
             <div class="message-header">
@@ -258,7 +264,7 @@ onUnmounted(() => {
               <span class="message-time">{{ formatDateTime(message.created_at) }}</span>
             </div>
             <div v-if="message.image_url" class="message-image">
-              <img :src="message.image_url" alt="留言图片" />
+              <img :src="message.image_url" alt="留言圖片" />
             </div>
             <div class="message-content">{{ message.content }}</div>
             <button 
@@ -276,7 +282,7 @@ onUnmounted(() => {
       <div class="floating-user-info">
         <span class="display-name" @click="showUserId = !showUserId">
           <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
-          {{ displayName }}
+          {{ displayName || '訪客' }}
           <span v-if="showUserId" class="user-id">({{ userId }})</span>
         </span>
       </div>      
@@ -426,7 +432,7 @@ h1 {
 .messages-container {
   width: 100%;
   max-width: 100%;
-  margin-top: 1rem;
+  margin-top: 5rem;
   height: calc(100vh - 6rem);
   overflow-y: auto;
   padding: 0.5rem;
@@ -597,7 +603,7 @@ h1 {
 /* 新增样式：浮动按钮 */
 .float-button {
   position: fixed;
-  bottom: 20px;
+  bottom: 60px;
   right: 20px;
   padding: 12px 24px;
   background-color: #4CAF50;
@@ -619,7 +625,7 @@ h1 {
 
 .floating-user-info {
   position: fixed;
-  bottom: 20px;
+  bottom: 60px;
   left: 20px;
   background: white;
   padding: 10px 15px;
@@ -669,41 +675,40 @@ h1 {
 @media (max-width: 768px) {
   /* 全局样式调整 */
   .title-section {
-    padding: 0 1rem;  /* 减小移动设备的内边距 */
-    max-width: calc(100% - 60px);  /* 调整移动设备的最大宽度 */
+    padding: 0 1rem;  
+    max-width: calc(100% - 60px); 
   }
 
   body {
-    font-size: 14px; /* 减小全局字体大小，适应小屏幕 */
-    line-height: 1.5; /* 增加行高，提高可读性 */
+    font-size: 14px; 
+    line-height: 1.5;
   }
   
   /* 容器调整 */
   .container {
     width: 100%;
-    padding: 0 10px; /* 减小内边距，利用更多空间 */
+    padding: 0 10px;
   }
   
   /* 标题样式 */
   .title {
-    font-size: 1.5rem; /* 减小标题字体大小 */
+    font-size: 1.5rem; 
     margin-bottom: 1rem;
     text-align: center;
   }
   
   /* 留言板容器 */
   .messages-container {
-    margin-top: 2rem; /* 减小顶部间距 */
-    height: calc(100vh - 6rem); /* 调整高度，考虑更小的标题栏 */
-    padding: 0.5rem; /* 减小内边距 */
-    border-radius: 8px; /* 稍微减小圆角 */
+    margin-top: 3rem; 
+    height: calc(100vh - 6rem);
+    border-radius: 8px; 
   }
   
   /* 留言项样式 */
   .message-item {
-    padding: 0.8rem; /* 减小内边距 */
-    margin-bottom: 0.8rem; /* 减小间距 */
-    border-radius: 6px; /* 稍微减小圆角 */
+    padding: 0.8rem; 
+    margin-bottom: 0.8rem;
+    border-radius: 6px;
   }
   
   /* 用户名样式 */
@@ -818,15 +823,15 @@ h1 {
 
 @media (max-width: 390px) {
   .title-section {
-    padding: 0 0.8rem;  /* 进一步减小小屏幕设备的内边距 */
-    max-width: calc(100% - 40px);  /* 调整小屏幕设备的最大宽度 */
+    padding: 0 0.8rem; 
+    max-width: calc(100% - 40px); 
   }  
   .message-board {
-    padding: 5px;  /* 进一步减小内边距 */
+    padding: 5px; 
   }
 
   .header {
-    padding: 0.5rem 1rem;  /* 减小头部内边距 */
+    padding: 0.5rem 1rem; 
   }
 
   .message-card {
