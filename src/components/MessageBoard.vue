@@ -644,13 +644,19 @@ h1 {
   margin: 1rem 0;
   border-radius: 8px;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  padding: 0 10px;
 }
 
 .message-image img {
-  width: 100%;
+  max-width: 100%; 
+  height: auto;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.3s ease;
+  object-fit: contain; 
+  width: auto;
 }
 
 .message-image img:hover {
