@@ -1,149 +1,3 @@
-<template>
-  <div class="message-board">
-    <div v-if="isLoading" class="loading">
-      <div class="loading-spinner"></div>
-      <span>載入中...</span>
-    </div>
-    <div v-else class="user-info">
-      <div class="header">
-        <button class="menu-button" @click="toggleSidebar">
-          <span class="menu-icon"></span>
-          <span class="menu-icon"></span>
-          <span class="menu-icon"></span>
-        </button>
-        
-        <div class="countdown">
-          <div class="countdown-icon">⏱️</div>
-          <div class="countdown-timer">{{ countdown }}秒</div>
-        </div>
-
-        <!-- 侧边栏 -->
-        <div class="sidebar" :class="{ 'sidebar-active': showSidebar }">
-          <div class="sidebar-header">
-            <h3>選單</h3>
-            <button class="close-sidebar" @click="toggleSidebar">✕</button>
-          </div>
-          <div class="sidebar-content">
-            <ul class="menu-list">
-              <li @click="handleSendNotification">
-                <span class="menu-item-icon">📢</span>
-                <span>發送通知</span>
-              </li>              
-              <li @click="handlePasswordSettings">
-                <span class="menu-item-icon">🔒</span>
-                <span>密碼設定</span>
-              </li>
-              <li @click="handleBasicSettings">
-                <span class="menu-item-icon">⚙️</span>
-                <span>基本設定</span>
-              </li>
-              <li v-if="isAdmin" @click="handleUserManagement">
-                <span class="menu-item-icon">👥</span>
-                <span>使用者資料</span>
-              </li>
-              <li v-if="isAdmin" @click="handleLoginRecords">
-                <span class="menu-item-icon">📋</span>
-                <span>登入記錄</span>
-              </li>
-              <li @click="handleLogout">
-                <span class="menu-item-icon">🚪</span>
-                <span>離開</span>
-              </li>              
-            </ul>
-          </div>
-        </div>
-
-        <!-- 遮罩层 -->
-        <div v-if="showSidebar" class="sidebar-overlay" @click="toggleSidebar"></div>
-
-        <div class="title-section">
-          <h1>{{ appTitle }}</h1>
-        </div>
-        <button @click="logout" class="logout-button">
-          <span class="logout-icon">🚪</span>
-          <span>登出</span>
-        </button>
-      </div>
-
-      
-      <!-- 可滚动消息区域 -->
-      <div ref="messagesContainer" class="messages-container">
-        <div v-if="isMessagesLoading" class="loading-messages">
-          <div class="loading-spinner"></div>
-          <span>獲取訊息中...</span>
-        </div>
-        <div v-else-if="messages.length === 0" class="no-messages">
-          <div class="no-messages-icon">📝</div>
-          <span>暫無留言</span>
-        </div>
-        <div v-else class="messages-list">
-          <div v-for="message in messages" :key="message.id" class="message-card">
-            <div class="message-header">
-              <div class="user-info-container">
-                <div class="user-avatar" :class="{ 'admin': message.is_admin }">
-                  <span class="user-icon">{{ message.is_admin ? '👑' : '👤' }}</span>
-                </div>
-                <div class="user-details">
-                  <span class="user-name" :class="{ 'admin': message.is_admin }">
-                    {{ message.display_name }}
-                  </span>
-                  <span class="message-time">{{ formatDateTime(message.created_at) }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-if="message.image_url" class="message-image">
-              <img :src="message.image_url" alt="留言圖片" @click="previewImage(message.image_url)" />
-            </div>
-            <div class="message-content">{{ message.content }}</div>
-            <div class="message-actions">
-              <button 
-                v-if="isAdmin" 
-                @click="deleteMessage(message.id)"
-                class="delete-button"
-              >
-                <span class="delete-icon">🗑️</span>
-                <span>删除</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 浮动用户信息 -->
-      <div class="floating-user-info" @click="showUserId = !showUserId">
-        <div class="user-avatar" :class="{ 'admin': isAdmin }">
-          <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
-        </div>
-        <div class="user-details">
-          <span class="display-name">{{ displayName || '訪客' }}</span>
-          <span v-if="showUserId" class="user-id">{{ userId }}</span>
-        </div>
-      </div>      
-
-      <!-- 浮动按钮 -->
-      <button class="float-button" @click="showAddMessageDialog = true">
-        <span class="float-icon">✏️</span>
-        <span>新增留言</span>
-      </button>
-
-      <!-- 对话框组件 -->
-      <AddMessageDialog 
-        v-model="showAddMessageDialog"
-        @message-created="fetchLatestMessages"
-      />
-      <PasswordSettingsDialog 
-        v-model="showPasswordDialog"
-      />
-      <NotificationDialog
-        v-model="showNotificationDialog"
-      />    
-      <LoginRecordsDialog 
-        v-model="showLoginRecordsDialog"
-      />      
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
@@ -155,6 +9,7 @@ import { showNotification } from '../services/notificationService';
 import { showLoading, hideLoading } from '../services/loadingService';
 import { formatDateTime } from '../utils/dateUtils';
 import axios from '../services/axiosInterceptor';
+
 
 const COUNTDOWN_SECONDS = 300;
 
@@ -181,18 +36,18 @@ const showLoginRecordsDialog = ref(false);
 
 const appTitle = import.meta.env.VITE_APP_TITLE || 'Message Board';
 
-// 切换侧边栏
+// 添加切换侧边栏的函数
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value;
 };
 
-// 滚动到底部
 const scrollToBottom = () => {
+  // 使用 setTimeout 确保在 DOM 完全渲染后执行滚动
   setTimeout(() => {
     if (messagesContainer.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
-  }, 100);
+  }, 100); // 添加短暂延迟，确保所有内容都已渲染
 };
 
 // 重置倒计时
@@ -243,14 +98,24 @@ const fetchLatestMessages = async () => {
   try {
     const response = await axios.get('/messages/?limit=5');
     messages.value = response.data.sort((a: any, b: any) => 
+
+      //最新的訊息在最下面
+      //new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      //最新的訊息在最上面
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
+
+    // 使用 nextTick 确保DOM更新后再滚动
+    // 以下是使用最新的訊息在最下面才啟用
+    // await nextTick();
+    // scrollToBottom();     
   } catch (error) {
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
     isMessagesLoading.value = false;
   }
 };
+
 
 // 删除留言函数
 const deleteMessage = async (messageId: number) => {
@@ -263,6 +128,7 @@ const deleteMessage = async (messageId: number) => {
   try {
     const response = await axios.delete(`/messages/${messageId}`);
     if (response.data.ok) {
+      //messages.value = messages.value.filter(msg => msg.id !== messageId);
        await fetchLatestMessages(); // 重新获取最新消息
       showNotification('删除留言成功', 'success');
     } else {
@@ -275,43 +141,34 @@ const deleteMessage = async (messageId: number) => {
   }
 };
 
-// 预览图片
-const previewImage = (imageUrl: string) => {
-  window.open(imageUrl, '_blank');
-};
-
 const handleSendNotification = () => {
   showNotificationDialog.value = true;
-  toggleSidebar(); // 关闭侧边栏
 };
 
 const handlePasswordSettings = () => {
   showPasswordDialog.value = true;
-  toggleSidebar(); // 关闭侧边栏
 };
 
 const handleLoginRecords = () => {
    showLoginRecordsDialog.value = true;
-   toggleSidebar(); // 关闭侧边栏
 };
 
 const handleBasicSettings = () => {
+  // 根据isAdmin状态执行不同的基本设定逻辑
   if (isAdmin.value) {
     showNotification("admin preferences", 'success');
   } else {
     showNotification("user preferences", 'success');
   }
-  toggleSidebar(); // 关闭侧边栏
 };
 
 // 管理员特有的功能处理函数
 const handleUserManagement = () => {
   showNotification("user management", 'success');
-  toggleSidebar(); // 关闭侧边栏
 };
 
+
 const handleLogout = () => {
-  toggleSidebar(); // 关闭侧边栏
   logout();
 };
 
@@ -342,46 +199,169 @@ onUnmounted(() => {
 });
 </script>
 
+<template>
+  <div class="message-board">
+    <div v-if="isLoading" class="loading">載入中...</div>
+    <div v-else class="user-info">
+      <div class="header">
+        <button class="menu-button" @click="toggleSidebar">
+          <span class="menu-icon"></span>
+          <span class="menu-icon"></span>
+          <span class="menu-icon"></span>
+        </button>        
+        <div class="countdown">
+          <span class="countdown-timer">{{ countdown }}秒</span>
+        </div>
+
+        <!-- 添加侧边栏 -->
+        <div class="sidebar" :class="{ 'sidebar-active': showSidebar }">
+          <div class="sidebar-content">
+            <h3>選單</h3>
+            <ul class="menu-list">
+              <li @click="handleSendNotification">
+                <span class="menu-item-icon">📢</span>發送通知
+              </li>              
+              <li @click="handlePasswordSettings">
+                <span class="menu-item-icon">🔒</span>密碼設定
+              </li>
+              <li @click="handleBasicSettings">
+                <span class="menu-item-icon">⚙️</span>基本設定
+              </li>
+              <li v-if="isAdmin" @click="handleUserManagement">
+                <span class="menu-item-icon">👥</span>使用者資料
+              </li>
+              <li v-if="isAdmin" @click="handleLoginRecords">
+                <span class="menu-item-icon">📋</span>登入記錄
+              </li>
+              <li @click="handleLogout">
+                <span class="menu-item-icon">🚪</span>離開
+              </li>              
+            </ul>
+          </div>
+        </div>
+
+        <!-- 添加遮罩层 -->
+        <div v-if="showSidebar" class="sidebar-overlay" @click="toggleSidebar"></div>
+
+        <div class="title-section">
+          <h1>{{ appTitle }}</h1>
+        </div>
+        <button @click="logout" class="logout-button">登出</button>
+      </div>
+
+      
+      <!-- 可滚动消息区域 -->
+      <div ref="messagesContainer" class="messages-container">
+        <div v-if="isMessagesLoading" class="loading-messages">獲取訊息中...</div>
+        <div v-else-if="messages.length === 0" class="no-messages">暫無留言</div>
+        <div v-else class="messages-list">
+          <div v-for="message in messages" :key="message.id" class="message-card">
+            <div class="message-header">
+              <span class="user-name" :class="{ 'admin': message.is_admin }">
+                <span class="user-icon">{{ message.is_admin ? '👑' : '👤' }}</span>
+                {{ message.display_name }}
+              </span>
+              <span class="message-time">{{ formatDateTime(message.created_at) }}</span>
+            </div>
+            <div v-if="message.image_url" class="message-image">
+              <img :src="message.image_url" alt="留言圖片" />
+            </div>
+            <div class="message-content">{{ message.content }}</div>
+            <button 
+              v-if="isAdmin" 
+              @click="deleteMessage(message.id)"
+              class="delete-button"
+            >
+              删除
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 顯示名稱：浮動 -->
+      <div class="floating-user-info">
+        <span class="display-name" @click="showUserId = !showUserId">
+          <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
+          {{ displayName || '訪客' }}
+          <span v-if="showUserId" class="user-id">({{ userId }})</span>
+        </span>
+      </div>      
+
+      <!-- 新增：浮动按钮 -->
+      <button class="float-button" @click="showAddMessageDialog = true">
+        新增留言
+      </button>
+
+      <!-- 新增：留言对话框组件 -->
+      <AddMessageDialog 
+        v-model="showAddMessageDialog"
+        @message-created="fetchLatestMessages"
+      />
+      <PasswordSettingsDialog 
+        v-model="showPasswordDialog"
+      />
+      <NotificationDialog
+        v-model="showNotificationDialog"
+      />    
+      <LoginRecordsDialog 
+        v-model="showLoginRecordsDialog"
+      />      
+    </div>
+  </div>
+</template>
+
 <style>
 @import '../assets/styles/components/sidebar.css';
 </style>
 
 <style scoped>
-/* 全局样式 */
+/* 原有样式保持不变 */
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  justify-content: center;
+  padding: 0 2rem;
+  max-width: calc(100% - 100px);
+  margin: 0 auto;
+}
+
+.display-name {
+  color: #666;
+  font-size: 1rem;
+  font-weight: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+h1 {
+  color: #333;
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: bold;
+  white-space: nowrap;
+  text-align: center;
+}
+
 .message-board {
   width: 100vw; 
   max-width: 100%;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+  background-color: #f5f5f5;
   padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
 }
 
-/* 加载动画 */
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  color: #666;
-  font-size: 1.2rem;
+.user-info {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 1rem;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-radius: 50%;
-  border-top-color: #3498db;
-  animation: spin 1s ease-in-out infinite;
-  margin-bottom: 15px;
-}
-
-/* 头部样式 */
 .header {
   position: fixed;
   top: 0;
@@ -394,49 +374,22 @@ onUnmounted(() => {
   margin-bottom: 2rem;
   background: white;
   padding: 1rem 2rem;
-  border-radius: 0 0 15px 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   white-space: nowrap;
   min-width: 0;
 }
 
-/* 菜单按钮 */
-.menu-button {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 24px;
-  height: 18px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  z-index: 1000;
-}
-
-.menu-icon {
-  display: block;
-  height: 2px;
-  width: 100%;
-  background-color: #333;
-  border-radius: 2px;
-  transition: all 0.3s ease-in-out;
-}
-
-/* 倒计时样式 */
 .countdown {
-  display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  background-color: #ff9800;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.9rem;
-  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
-}
-
-.countdown-icon {
-  margin-right: 5px;
-  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .countdown-timer {
@@ -445,57 +398,37 @@ onUnmounted(() => {
   text-align: center;
 }
 
-/* 标题区域 */
-.title-section {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-  justify-content: center;
-  padding: 0 2rem;
-  max-width: calc(100% - 100px);
-  margin: 0 auto;
-}
-
-h1 {
-  color: #333;
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: bold;
-  white-space: nowrap;
+.loading {
   text-align: center;
-  background: linear-gradient(90deg, #3498db, #2c3e50);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-size: 1.2rem;
+  color: #666;
+  margin-top: 2rem;
 }
 
-/* 登出按钮 */
 .logout-button {
-  display: flex;
-  align-items: center;
   padding: 0.8rem 1.5rem;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background-color: #dc3545;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   white-space: nowrap;
 }
 
 .logout-button:hover {
+  background-color: #c82333;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.logout-icon {
-  margin-right: 5px;
+.logout-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* 消息容器 */
 .messages-container {
   width: 100%;
   max-width: 100%;
@@ -504,9 +437,10 @@ h1 {
   overflow-y: auto;
   padding: 0.5rem;
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: #888 #f1f1f1;
+  -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+  scrollbar-width: thin; /* Firefox滚动条样式 */
+  scrollbar-color: #888 #f1f1f1; /* Firefox滚动条颜色 */
+
 }
 
 .messages-container::-webkit-scrollbar {
@@ -527,99 +461,82 @@ h1 {
   background: #555;
 }
 
-/* 加载消息和无消息状态 */
+.loading-messages::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 .loading-messages, .no-messages {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   text-align: center;
-  padding: 3rem;
+  padding: 2rem;
   color: #666;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin: 2rem auto;
-  max-width: 80%;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.loading-messages .loading-spinner {
-  width: 30px;
-  height: 30px;
-  border-width: 3px;
+.loading-messages, .no-messages {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.no-messages-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  opacity: 0.7;
-}
-
-/* 消息列表 */
 .messages-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1rem 0;
+  gap: 1rem;
+  padding: 0.5rem 0;
 }
 
-/* 消息卡片 */
 .message-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   width: 90%;
   margin: 0 auto;
-  overflow: hidden;
 }
 
 .message-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* 消息头部 */
 .message-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  padding-bottom: 0.8rem;
-  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
 }
 
-.user-info-container {
-  display: flex;
-  align-items: center;
-}
-
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.user-avatar.admin {
-  background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
-}
-
-.user-details {
-  display: flex;
-  flex-direction: column;
+.user-id {
+  font-size: 0.8rem;
+  color: #999;
+  margin-left: 0.5rem;
 }
 
 .user-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 600;
-  color: #555;
+  color: #666;
   font-size: 1rem;
 }
 
@@ -629,322 +546,297 @@ h1 {
 }
 
 .user-icon {
-  font-size: 1.2rem;
+  font-size: 1.2em;
+  margin-right: 0.3rem;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.admin .user-icon {
+  filter: none;
+  opacity: 1;
+  animation: pulse 2s infinite;
 }
 
 .message-time {
-  color: #999;
-  font-size: 0.85rem;
-  margin-top: 2px;
+  color: #888;
+  font-size: 0.9rem;
 }
 
-/* 消息图片 */
-.message-image {
-  width: 100%;
-  margin: 1rem 0;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  padding: 0 10px;
-}
-
-.message-image img {
-  max-width: 100%; 
-  height: auto;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-  object-fit: contain; 
-  width: auto;
-}
-
-.message-image img:hover {
-  transform: scale(1.02);
-}
-
-/* 消息内容 */
 .message-content {
   margin-bottom: 1rem;
-  line-height: 1.6;
+  line-height: 1.5;
   color: #444;
   white-space: pre-wrap;
   word-wrap: break-word;
-  font-size: 1rem;
 }
 
-/* 消息操作区 */
-.message-actions {
-  display: flex;
-  justify-content: flex-end;
+.message-image {
+  width: 100%;
+}
+
+.message-image img {
+  max-width: 100%;
+  border-radius: 4px;
+  display: block;
 }
 
 .delete-button {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 0.4rem 0.8rem;
+  background-color: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.3s ease;
 }
 
 .delete-button:hover {
+  background-color: #c82333;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
 }
 
-.delete-icon {
-  margin-right: 5px;
-}
-
-/* 浮动按钮 */
+/* 新增样式：浮动按钮 */
 .float-button {
   position: fixed;
-  bottom: 80px;
+  bottom: 60px;
   right: 20px;
-  display: flex;
-  align-items: center;
-  padding: 12px 20px;
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  padding: 12px 24px;
+  background-color: #4CAF50;
   color: white;
   border: none;
-  border-radius: 30px;
+  border-radius: 24px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   z-index: 100;
-  font-weight: 500;
+  font-weight: bold;
   transition: all 0.3s ease;
 }
 
 .float-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-.float-icon {
-  margin-right: 8px;
-}
-
-/* 浮动用户信息 */
 .floating-user-info {
   position: fixed;
-  bottom: 80px;
+  bottom: 60px;
   left: 20px;
-  display: flex;
-  align-items: center;
   background: white;
   padding: 10px 15px;
-  border-radius: 30px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 100;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease;
 }
 
 .floating-user-info:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.floating-user-info .user-avatar {
-  width: 36px;
-  height: 36px;
-  margin-right: 10px;
-}
-
-.floating-user-info .user-details {
-  flex-direction: row;
-  align-items: center;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .floating-user-info .display-name {
-  color: #555;
-  font-size: 0.95rem;
-  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .floating-user-info .user-id {
   font-size: 0.8rem;
   color: #999;
-  margin-left: 5px;
 }
 
-/* 侧边栏关闭按钮 */
-.close-sidebar {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #777;
-  transition: color 0.3s ease;
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
-.close-sidebar:hover {
-  color: #333;
-}
-
-/* 侧边栏头部 */
-.sidebar-header {
-  position: relative;
-  padding: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.sidebar-header h3 {
-  margin: 0;
-  font-size: 1.3rem;
-  color: #333;
-  text-align: center;
-}
-
-/* 菜单列表 */
-.menu-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu-list li {
-  display: flex;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.menu-list li:hover {
-  background-color: #f9f9f9;
-}
-
-.menu-list li:last-child {
-  border-bottom: none;
-}
-
-.menu-item-icon {
-  margin-right: 12px;
-  font-size: 1.2rem;
-}
-
-/* 动画效果 */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-/* 响应式设计 */
+/* 手机设备专用CSS */
 @media (max-width: 768px) {
-  .header {
-    padding: 0.8rem 1rem;
-  }
-  
+  /* 全局样式调整 */
   .title-section {
-    padding: 0 1rem;
-    max-width: calc(100% - 120px);
+    padding: 0 1rem;  
+    max-width: calc(100% - 60px); 
+  }
+
+  body {
+    font-size: 14px; 
+    line-height: 1.5;
   }
   
-  h1 {
-    font-size: 1.5rem;
+  /* 容器调整 */
+  .container {
+    width: 100%;
+    padding: 0 10px;
   }
   
-  .logout-button {
+  /* 标题样式 */
+  .title {
+    font-size: 1.5rem; 
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  /* 留言板容器 */
+  .messages-container {
+    margin-top: 3rem; 
+    height: calc(100vh - 6rem);
+    border-radius: 8px; 
+  }
+  
+  /* 留言项样式 */
+  .message-item {
+    padding: 0.8rem; 
+    margin-bottom: 0.8rem;
+    border-radius: 6px;
+  }
+  
+  /* 用户名样式 */
+  .username {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* 留言内容样式 */
+  .message-content {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* 留言时间样式 */
+  .message-time {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+  }
+  
+  /* 输入区域样式 */
+  .input-area {
+    padding: 0.8rem;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  /* 输入框样式 */
+  .message-input {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+
+  .messages-list {
+    gap: 0.8rem;
+  }  
+  
+  /* 按钮样式 */
+  .btn {
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
   }
   
-  .messages-container {
-    margin-top: 4rem;
-    height: calc(100vh - 5rem);
+  .btn-primary {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
   }
   
+  /* 表单元素间距 */
+  .form-group {
+    margin-bottom: 0.8rem;
+  }
+  
+  /* 标签样式 */
+  label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    display: block;
+  }
+  
+  /* 提示信息样式 */
+  .alert {
+    padding: 0.6rem;
+    margin-bottom: 0.8rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+  
+  /* 导航栏样式 */
+  .navbar {
+    padding: 0.5rem;
+  }
+  
+  .navbar-brand {
+    font-size: 1.2rem;
+  }
+  
+  /* 卡片样式 */
   .message-card {
-    width: 95%;
-    padding: 1.2rem;
+    width: 90%;  
+    padding: 1rem; 
+  }
+
+  .card {
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   
-  .floating-user-info {
-    bottom: 70px;
-    left: 15px;
-    padding: 8px 12px;
+  .card-body {
+    padding: 0.8rem;
   }
   
-  .floating-user-info .user-avatar {
-    width: 32px;
-    height: 32px;
+  .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
   }
   
-  .float-button {
-    bottom: 70px;
-    right: 15px;
-    padding: 10px 16px;
+  /* 列表样式 */
+  .list-group-item {
+    padding: 0.8rem;
+    font-size: 0.9rem;
   }
 }
 
-@media (max-width: 480px) {
-  .header {
-    padding: 0.6rem 0.8rem;
-  }
-  
+@media (max-width: 390px) {
   .title-section {
-    padding: 0 0.5rem;
-    max-width: calc(100% - 100px);
+    padding: 0 0.8rem; 
+    max-width: calc(100% - 40px); 
+  }  
+  .message-board {
+    padding: 5px; 
   }
-  
-  h1 {
-    font-size: 1.3rem;
+
+  .header {
+    padding: 0.5rem 1rem; 
   }
-  
-  .logout-button {
-    padding: 0.5rem 0.8rem;
-  }
-  
-  .logout-icon {
-    margin-right: 0;
-  }
-  
-  .logout-button span:last-child {
-    display: none;
-  }
-  
+
   .message-card {
-    width: 98%;
-    padding: 1rem;
-  }
-  
-  .user-avatar {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .floating-user-info {
-    bottom: 60px;
-    left: 10px;
-    padding: 6px 10px;
-  }
-  
-  .floating-user-info .display-name {
-    font-size: 0.9rem;
-  }
-  
-  .float-button {
-    bottom: 60px;
-    right: 10px;
-    padding: 8px 14px;
-  }
-  
-  .float-icon {
-    margin-right: 5px;
-  }
-  
-  .float-button span:last-child {
-    font-size: 0.9rem;
+    width: 90%;
+    padding: 0.8rem;
   }
 }
 </style>
