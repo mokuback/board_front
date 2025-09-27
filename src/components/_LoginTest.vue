@@ -2,12 +2,12 @@
   <div class="login-container">
     <h2>使用者登錄</h2>
     <div v-if="displayName" class="line-info">
-        <p>LINE ID: {{ username }}</p>
-        <p>顯示名稱: {{ displayName }}</p>
+        <!--<p>LINE ID: {{ username }}</p>-->        
         <div class="avatar" v-if="pictureUrl">
           <img :src="pictureUrl" alt="使用者頭像" />
         </div>
-        <p>狀態訊息: {{ statusMessage || '未設置' }}</p>
+        <p>{{ displayName }}</p>
+        <!-- <p>狀態訊息: {{ statusMessage || '未設置' }}</p> -->
         <button class="logout-line-btn" @click="handleLineLogout">退出 LINE</button>
     </div>    
     <div class="form-group">
@@ -169,19 +169,24 @@ const handleLogin = async () => {
 };
 
 onMounted(() => {
-  initializeLiff();
+  //initializeLiff();
 });
 
 </script>
 
 <style scoped>
 .login-container {
-  max-width: 500px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .button-container {
@@ -191,7 +196,7 @@ onMounted(() => {
 }
 
 .login-btn {
-  flex: 1;  /* 占据剩余空间 */
+  flex: 1;
   padding: 10px;
   background-color: #4CAF50;
   color: white;
@@ -201,14 +206,14 @@ onMounted(() => {
 }
 
 .line-btn {
-  width: auto;  /* 自动适应内容宽度 */
-  padding: 10px 20px;  /* 左右内边距固定 */
+  width: auto;
+  padding: 10px 20px;
   background-color: #00C300;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  white-space: nowrap;  /* 防止文字换行 */
+  white-space: nowrap;
 }
 
 .line-info {
@@ -223,6 +228,7 @@ onMounted(() => {
 .line-info p {
   margin: 10px 0;
   font-size: 16px;
+  text-align: center;
 }
 
 .line-btn:hover {
@@ -230,20 +236,19 @@ onMounted(() => {
 }
 
 .avatar {
-  margin: 15px auto;
+  margin: 10px auto;
   text-align: center;
 }
 
 .avatar img {
-  width: 100px;
-  height: 100px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-/* 其他样式保持不变 */
 .form-group {
   margin-bottom: 15px;
   text-align: left;
@@ -313,4 +318,51 @@ pre {
   word-wrap: break-word;
   margin: 0;
 }
+
+.logout-line-btn {
+  background-color: rgba(0, 249, 0, 0.6);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.logout-line-btn:hover {
+  background-color: rgba(0, 249, 0, 0.4);
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 375px) {
+  .login-container {
+    padding: 10px;
+  }
+  
+  .form-group {
+    margin-bottom: 10px;
+  }
+  
+  .button-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .line-btn {
+    width: 100%;
+  }
+}
+
+@media screen and (min-width: 376px) {
+  .login-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+}
+
 </style>
