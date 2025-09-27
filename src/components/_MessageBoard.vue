@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, handleError } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import AddMessageDialog from './AddMessageDialog.vue'; // 导入新增留言对话框组件
+import AddMessageDialog from './AddMessageDialog.vue';
+import PasswordSettingsDialog from './PasswordSettingsDialog.vue';
+import NotificationDialog from './NotificationDialog.vue';
+import LoginRecordsDialog from './LoginRecordsDialog.vue';
 import { showNotification } from '../services/notificationService';
 import { showLoading, hideLoading } from '../services/loadingService';
+import { formatDateTime } from '../utils/dateUtils';
 import axios from '../services/axiosInterceptor';
 
-const COUNTDOWN_SECONDS = 600;
+
+const COUNTDOWN_SECONDS = 300;
 
 const router = useRouter();
 const userId = ref<string>('');
@@ -15,14 +20,35 @@ const isAdmin = ref<boolean>(false);
 const isLoading = ref<boolean>(true);
 const showUserId = ref<boolean>(false);
 const countdown = ref<number>(COUNTDOWN_SECONDS);
+const showSidebar = ref(false);
+const messagesContainer = ref<HTMLElement | null>(null);
+
 let timer: number | null = null;
 
 // 消息列表相关状态
 const messages = ref<Array<any>>([]);
 const isMessagesLoading = ref<boolean>(true);
 
-// 新增：控制新增留言对话框的显示状态
 const showAddMessageDialog = ref(false);
+const showPasswordDialog = ref(false);
+const showNotificationDialog = ref(false);
+const showLoginRecordsDialog = ref(false);
+
+const appTitle = import.meta.env.VITE_APP_TITLE || 'Message Board';
+
+// 添加切换侧边栏的函数
+const toggleSidebar = () => {
+  showSidebar.value = !showSidebar.value;
+};
+
+const scrollToBottom = () => {
+  // 使用 setTimeout 确保在 DOM 完全渲染后执行滚动
+  setTimeout(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+  }, 100); // 添加短暂延迟，确保所有内容都已渲染
+};
 
 // 重置倒计时
 const resetTimer = () => {
@@ -70,10 +96,19 @@ const removeActivityListeners = () => {
 const fetchLatestMessages = async () => {
   isMessagesLoading.value = true;
   try {
-    const response = await axios.get('/messages/?limit=10');
+    const response = await axios.get('/messages/?limit=5');
     messages.value = response.data.sort((a: any, b: any) => 
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+
+      //最新的訊息在最下面
+      //new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      //最新的訊息在最上面
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
+
+    // 使用 nextTick 确保DOM更新后再滚动
+    // 以下是使用最新的訊息在最下面才啟用
+    // await nextTick();
+    // scrollToBottom();     
   } catch (error) {
     // 由 axiosInterceptor.ts 處理錯誤
   } finally {
@@ -93,7 +128,8 @@ const deleteMessage = async (messageId: number) => {
   try {
     const response = await axios.delete(`/messages/${messageId}`);
     if (response.data.ok) {
-      messages.value = messages.value.filter(msg => msg.id !== messageId);
+      //messages.value = messages.value.filter(msg => msg.id !== messageId);
+       await fetchLatestMessages(); // 重新获取最新消息
       showNotification('删除留言成功', 'success');
     } else {
       showNotification('删除留言失敗', 'error');
@@ -105,28 +141,36 @@ const deleteMessage = async (messageId: number) => {
   }
 };
 
-// 日期时间格式化函数
-// const formatDateTime = (dateTimeString: string) => {
-//   const date = new Date(dateTimeString);
-//   return date.toLocaleString();
-// };
-
-// 日期时间格式化函数
-const formatDateTime = (dateTimeString: string) => {
-  const date = new Date(dateTimeString);
-  date.setHours(date.getHours() + Number(import.meta.env.VITE_TIME_OFFSET));
-  return date.toLocaleString(import.meta.env.VITE_LOCALE, {
-    timeZone: import.meta.env.VITE_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
+const handleSendNotification = () => {
+  showNotificationDialog.value = true;
 };
 
+const handlePasswordSettings = () => {
+  showPasswordDialog.value = true;
+};
+
+const handleLoginRecords = () => {
+   showLoginRecordsDialog.value = true;
+};
+
+const handleBasicSettings = () => {
+  // 根据isAdmin状态执行不同的基本设定逻辑
+  if (isAdmin.value) {
+    showNotification("admin preferences", 'success');
+  } else {
+    showNotification("user preferences", 'success');
+  }
+};
+
+// 管理员特有的功能处理函数
+const handleUserManagement = () => {
+  showNotification("user management", 'success');
+};
+
+
+const handleLogout = () => {
+  logout();
+};
 
 // 检查登录状态
 onMounted(async () => {
@@ -157,28 +201,59 @@ onUnmounted(() => {
 
 <template>
   <div class="message-board">
-    <div v-if="isLoading" class="loading">加载中...</div>
+    <div v-if="isLoading" class="loading">載入中...</div>
     <div v-else class="user-info">
       <div class="header">
+        <button class="menu-button" @click="toggleSidebar">
+          <span class="menu-icon"></span>
+          <span class="menu-icon"></span>
+          <span class="menu-icon"></span>
+        </button>        
         <div class="countdown">
           <span class="countdown-timer">{{ countdown }}秒</span>
         </div>
+
+        <!-- 添加侧边栏 -->
+        <div class="sidebar" :class="{ 'sidebar-active': showSidebar }">
+          <div class="sidebar-content">
+            <h3>選單</h3>
+            <ul class="menu-list">
+              <li @click="handleSendNotification">
+                <span class="menu-item-icon">📢</span>發送通知
+              </li>              
+              <li @click="handlePasswordSettings">
+                <span class="menu-item-icon">🔒</span>密碼設定
+              </li>
+              <li @click="handleBasicSettings">
+                <span class="menu-item-icon">⚙️</span>基本設定
+              </li>
+              <li v-if="isAdmin" @click="handleUserManagement">
+                <span class="menu-item-icon">👥</span>使用者資料
+              </li>
+              <li v-if="isAdmin" @click="handleLoginRecords">
+                <span class="menu-item-icon">📋</span>登入記錄
+              </li>
+              <li @click="handleLogout">
+                <span class="menu-item-icon">🚪</span>離開
+              </li>              
+            </ul>
+          </div>
+        </div>
+
+        <!-- 添加遮罩层 -->
+        <div v-if="showSidebar" class="sidebar-overlay" @click="toggleSidebar"></div>
+
         <div class="title-section">
-          <h1>Message Board</h1>
-          <span class="display-name" @click="showUserId = !showUserId">
-            <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
-            {{ displayName }}
-            <span v-if="showUserId" class="user-id">({{ userId }})</span>
-          </span>
+          <h1>{{ appTitle }}</h1>
         </div>
         <button @click="logout" class="logout-button">登出</button>
       </div>
 
       
       <!-- 可滚动消息区域 -->
-      <div class="messages-container">
-        <div v-if="isMessagesLoading" class="loading-messages">加载消息中...</div>
-        <div v-else-if="messages.length === 0" class="no-messages">暂无留言</div>
+      <div ref="messagesContainer" class="messages-container">
+        <div v-if="isMessagesLoading" class="loading-messages">獲取訊息中...</div>
+        <div v-else-if="messages.length === 0" class="no-messages">暫無留言</div>
         <div v-else class="messages-list">
           <div v-for="message in messages" :key="message.id" class="message-card">
             <div class="message-header">
@@ -189,7 +264,7 @@ onUnmounted(() => {
               <span class="message-time">{{ formatDateTime(message.created_at) }}</span>
             </div>
             <div v-if="message.image_url" class="message-image">
-              <img :src="message.image_url" alt="留言图片" />
+              <img :src="message.image_url" alt="留言圖片" />
             </div>
             <div class="message-content">{{ message.content }}</div>
             <button 
@@ -203,6 +278,15 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- 顯示名稱：浮動 -->
+      <div class="floating-user-info">
+        <span class="display-name" @click="showUserId = !showUserId">
+          <span class="user-icon">{{ isAdmin ? '👑' : '👤' }}</span>
+          {{ displayName || '訪客' }}
+          <span v-if="showUserId" class="user-id">({{ userId }})</span>
+        </span>
+      </div>      
+
       <!-- 新增：浮动按钮 -->
       <button class="float-button" @click="showAddMessageDialog = true">
         新增留言
@@ -213,9 +297,22 @@ onUnmounted(() => {
         v-model="showAddMessageDialog"
         @message-created="fetchLatestMessages"
       />
+      <PasswordSettingsDialog 
+        v-model="showPasswordDialog"
+      />
+      <NotificationDialog
+        v-model="showNotificationDialog"
+      />    
+      <LoginRecordsDialog 
+        v-model="showLoginRecordsDialog"
+      />      
     </div>
   </div>
 </template>
+
+<style>
+@import '../assets/styles/components/sidebar.css';
+</style>
 
 <style scoped>
 /* 原有样式保持不变 */
@@ -225,6 +322,9 @@ onUnmounted(() => {
   gap: 1rem;
   flex: 1;
   justify-content: center;
+  padding: 0 2rem;
+  max-width: calc(100% - 100px);
+  margin: 0 auto;
 }
 
 .display-name {
@@ -242,13 +342,15 @@ h1 {
   font-size: 1.8rem;
   font-weight: bold;
   white-space: nowrap;
+  text-align: center;
 }
 
 .message-board {
-  width: 100vw;
+  width: 100vw; 
+  max-width: 100%;
   min-height: 100vh;
   background-color: #f5f5f5;
-  padding: 20px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -256,8 +358,8 @@ h1 {
 
 .user-info {
   width: 100%;
-  max-width: 600px;
-  margin-top: 2rem;
+  max-width: 100%;
+  margin-top: 1rem;
 }
 
 .header {
@@ -265,7 +367,7 @@ h1 {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: 999;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -329,11 +431,57 @@ h1 {
 
 .messages-container {
   width: 100%;
-  max-width: 600px;
-  margin-top: 6rem;
-  height: calc(100vh - 8rem);
+  max-width: 100%;
+  margin-top: 5rem;
+  height: calc(100vh - 6rem);
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0.5rem;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
+  scrollbar-width: thin; /* Firefox滚动条样式 */
+  scrollbar-color: #888 #f1f1f1; /* Firefox滚动条颜色 */
+
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.loading-messages::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-messages, .no-messages {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .loading-messages, .no-messages {
@@ -349,6 +497,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding: 0.5rem 0;
 }
 
 .message-card {
@@ -358,6 +507,8 @@ h1 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
+  width: 90%;
+  margin: 0 auto;
 }
 
 .message-card:hover {
@@ -449,54 +600,10 @@ h1 {
   transform: translateY(-1px);
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@media (max-width: 768px) {
-  .header {
-    padding: 0.8rem 1rem;
-  }
-
-  h1 {
-    font-size: 1.4rem;
-  }
-
-  .display-name {
-    color: #666;
-    font-size: 1rem;
-    font-weight: normal;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    cursor: pointer;  
-  }
-
-  .countdown {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-
-  .logout-button {
-    padding: 0.6rem 1.2rem;
-    font-size: 0.9rem;
-  }
-}
-
 /* 新增样式：浮动按钮 */
 .float-button {
   position: fixed;
-  bottom: 20px;
+  bottom: 60px;
   right: 20px;
   padding: 12px 24px;
   background-color: #4CAF50;
@@ -514,5 +621,222 @@ h1 {
   background-color: #45a049;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.floating-user-info {
+  position: fixed;
+  bottom: 60px;
+  left: 20px;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.floating-user-info:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.floating-user-info .display-name {
+  color: #666;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.floating-user-info .user-id {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 手机设备专用CSS */
+@media (max-width: 768px) {
+  /* 全局样式调整 */
+  .title-section {
+    padding: 0 1rem;  
+    max-width: calc(100% - 60px); 
+  }
+
+  body {
+    font-size: 14px; 
+    line-height: 1.5;
+  }
+  
+  /* 容器调整 */
+  .container {
+    width: 100%;
+    padding: 0 10px;
+  }
+  
+  /* 标题样式 */
+  .title {
+    font-size: 1.5rem; 
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  /* 留言板容器 */
+  .messages-container {
+    margin-top: 3rem; 
+    height: calc(100vh - 6rem);
+    border-radius: 8px; 
+  }
+  
+  /* 留言项样式 */
+  .message-item {
+    padding: 0.8rem; 
+    margin-bottom: 0.8rem;
+    border-radius: 6px;
+  }
+  
+  /* 用户名样式 */
+  .username {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* 留言内容样式 */
+  .message-content {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* 留言时间样式 */
+  .message-time {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+  }
+  
+  /* 输入区域样式 */
+  .input-area {
+    padding: 0.8rem;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  /* 输入框样式 */
+  .message-input {
+    width: 100%;
+    padding: 0.6rem;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+  }
+
+  .messages-list {
+    gap: 0.8rem;
+  }  
+  
+  /* 按钮样式 */
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+  }
+  
+  .btn-primary {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+  }
+  
+  /* 表单元素间距 */
+  .form-group {
+    margin-bottom: 0.8rem;
+  }
+  
+  /* 标签样式 */
+  label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+    display: block;
+  }
+  
+  /* 提示信息样式 */
+  .alert {
+    padding: 0.6rem;
+    margin-bottom: 0.8rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+  
+  /* 导航栏样式 */
+  .navbar {
+    padding: 0.5rem;
+  }
+  
+  .navbar-brand {
+    font-size: 1.2rem;
+  }
+  
+  /* 卡片样式 */
+  .message-card {
+    width: 90%;  
+    padding: 1rem; 
+  }
+
+  .card {
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .card-body {
+    padding: 0.8rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* 列表样式 */
+  .list-group-item {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .title-section {
+    padding: 0 0.8rem; 
+    max-width: calc(100% - 40px); 
+  }  
+  .message-board {
+    padding: 5px; 
+  }
+
+  .header {
+    padding: 0.5rem 1rem; 
+  }
+
+  .message-card {
+    width: 90%;
+    padding: 0.8rem;
+  }
 }
 </style>
