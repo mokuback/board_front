@@ -2,12 +2,12 @@
   <div class="login-container">
     <h2>使用者登錄</h2>
     <div v-if="displayName" class="line-info">
-        <!--<p>LINE ID: {{ username }}</p>-->
-        <p>顯示名稱: {{ displayName }}</p>
+        <!--<p>LINE ID: {{ username }}</p>-->        
         <div class="avatar" v-if="pictureUrl">
           <img :src="pictureUrl" alt="使用者頭像" />
         </div>
-        <p>狀態訊息: {{ statusMessage || '未設置' }}</p>
+        <p>{{ displayName }}</p>
+        <!-- <p>狀態訊息: {{ statusMessage || '未設置' }}</p> -->
         <button class="logout-line-btn" @click="handleLineLogout">退出 LINE</button>
     </div>    
     <div class="form-group">
@@ -228,6 +228,7 @@ onMounted(() => {
 .line-info p {
   margin: 10px 0;
   font-size: 16px;
+  text-align: center;
 }
 
 .line-btn:hover {
