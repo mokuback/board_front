@@ -143,14 +143,17 @@ const deleteMessage = async (messageId: number) => {
 
 const handleSendNotification = () => {
   showNotificationDialog.value = true;
+  toggleSidebar();
 };
 
 const handlePasswordSettings = () => {
   showPasswordDialog.value = true;
+  toggleSidebar();
 };
 
 const handleLoginRecords = () => {
-   showLoginRecordsDialog.value = true;
+  showLoginRecordsDialog.value = true;
+  toggleSidebar(); 
 };
 
 const handleBasicSettings = () => {
@@ -160,11 +163,13 @@ const handleBasicSettings = () => {
   } else {
     showNotification("user preferences", 'success');
   }
+  toggleSidebar();
 };
 
 // 管理员特有的功能处理函数
 const handleUserManagement = () => {
   showNotification("user management", 'success');
+  toggleSidebar();
 };
 
 
@@ -569,10 +574,12 @@ h1 {
   color: #444;
   white-space: pre-wrap;
   word-wrap: break-word;
+  margin-top: 1rem;
 }
 
 .message-image {
   width: 100%;
+  margin-bottom: 1.5rem;
 }
 
 .message-image img {
@@ -722,6 +729,7 @@ h1 {
   .message-content {
     font-size: 0.9rem;
     margin-bottom: 0.3rem;
+    margin-top: 0.3rem;
   }
   
   /* 留言时间样式 */

@@ -3,6 +3,9 @@
     <div class="login-card">
       <div class="login-header">
         <h2>使用者登錄</h2>
+        <button class="task-panel-btn" @click="handleTaskPanelLogin">
+          工作面板
+        </button>        
       </div>
       
       <div v-if="displayName" class="line-info">
@@ -123,7 +126,7 @@ const handleLineLogout = () => {
   statusMessage.value = '';
 };
 
-const handleLogin = async () => {
+const handleLoginWithRoute = async (route: string) => {
   if (!username.value || !password.value) {
     errorMessage.value = '使用者名稱和密碼不能為空';
     showNotification('使用者名稱和密碼不能為空', 'error');
@@ -149,7 +152,7 @@ const handleLogin = async () => {
       localStorage.setItem('userId', username.value);
       localStorage.setItem('displayName', displayName.value); 
       localStorage.setItem('isAdmin', data.is_admin);
-      router.push('/messages');
+      router.push(route); // 使用传入的路由参数
     } else {      
       errorMessage.value = data.detail || '登入失敗';
       showNotification(data.detail || '登入失敗', 'error');
@@ -160,6 +163,14 @@ const handleLogin = async () => {
   } finally {
     hideLoading();
   }
+};
+
+const handleLogin = async () => {
+  await handleLoginWithRoute('/messages');
+};
+
+const handleTaskPanelLogin = async () => {
+  await handleLoginWithRoute('/task');
 };
 
 onMounted(() => {
@@ -195,6 +206,7 @@ onMounted(() => {
 .login-header {
   text-align: center;
   margin-bottom: 25px;
+  position: relative;
 }
 
 .login-header h2 {
@@ -366,6 +378,28 @@ input:disabled {
 .logout-line-btn:hover {
   background-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
+}
+
+.task-panel-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #e0e0e0 0%, #d0d0d0 100%);
+  color: #555;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.task-panel-btn:hover {
+  background: linear-gradient(135deg, #d0d0d0 0%, #c0c0c0 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
 .error-message {
