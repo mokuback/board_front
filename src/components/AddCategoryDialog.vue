@@ -2,7 +2,7 @@
   <transition name="dialog-fade">
     <div v-show="modelValue" class="dialog-overlay" @click.self="handleCancel">
       <div class="dialog-content">
-        <h3>新增分類</h3>
+        <h3>{{ title }}</h3>
         <form @submit.prevent="handleSubmit">
           <div class="form-group">
             <label>分類名稱 <span class="required">*</span></label>
@@ -39,7 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { reactive, watch, type PropType } from 'vue';
+import { showNotification } from '../services/notificationService';
 
 interface TaskCategory {
   id: number;
@@ -51,7 +52,24 @@ const props = defineProps({
   modelValue: {
     type: Boolean,
     required: true
-  }
+  },
+  title: {
+    type: String,
+    default: '新增分類'
+  },
+
+  isEdit: {
+    type: Boolean,
+    default: false
+  },
+  editData: {
+    type: Object as PropType<TaskCategory | null>,
+    default: null
+  },  
+  categories: {
+    type: Array as PropType<TaskCategory[]>,
+    default: () => []
+  }  
 });
 
 const emit = defineEmits(['update:modelValue', 'submit', 'clear']);
@@ -64,24 +82,60 @@ const formData = reactive<TaskCategory>({
 
 const handleCancel = () => {
   emit('update:modelValue', false);
+
 };
 
 const handleClear = () => {
-  resetForm();
-  // emit('clear');
+  if (props.isEdit && props.editData) {
+    // 编辑模式下恢复原始值
+    formData.id = props.editData.id;
+    formData.category_name = props.editData.category_name;
+    formData.content = props.editData.content;
+  } else {
+    // 新增模式下清空
+    resetForm();
+  }
 };
 
 const handleSubmit = () => {
   if (!formData.category_name.trim()) {
     return;
   }
+
+  // 检查分类名称是否已存在（排除自己）
+  const nameExists = props.categories.some(
+    cat => cat.category_name.toLowerCase() === formData.category_name.trim().toLowerCase() && cat.id !== formData.id
+  );
+  
+  if (nameExists) {
+    // 显示警告通知
+    showNotification('分類名稱已存在，請使用其他名稱', 'error');
+    return;
+  }
+  
   emit('submit', { ...formData });
 };
 
 const resetForm = () => {
+  formData.id = 0; 
   formData.category_name = '';
   formData.content = '';
 };
+
+watch(() => props.editData, (newData) => {
+  if (newData) {
+    formData.id = newData.id;
+    formData.category_name = newData.category_name;
+    formData.content = newData.content;
+  }
+}, { immediate: true });
+
+watch(() => props.isEdit, (newIsEdit) => {
+  if (!newIsEdit) {
+    // 从编辑模式切换到新增模式时，重置表单
+    resetForm();
+  }
+}, { immediate: true });
 
 defineExpose({
   handleClear
