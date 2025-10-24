@@ -41,16 +41,8 @@
   import { showNotification } from '../services/notificationService';
   import { TASK_STATUS_TEXT, TASK_STATUS } from '../utils/constants';
   import { getStatusIcon } from '../utils/statusUtils';
-  import type { TaskItem } from '../composables/useTaskBoard';
-
-  interface TaskProgress {
-    id: number;
-    progress_name: string;
-    content: string;
-    progress_at: string;
-    status: number;
-    item_id: number;
-  }
+  import { getDefaultDateTime } from '../utils/dateUtils';
+  import type { TaskProgress, TaskItem } from '../types/task';
 
   const props = defineProps({
     modelValue: {
@@ -80,16 +72,6 @@
   });
 
   const emit = defineEmits(['update:modelValue', 'submit', 'clear']);
-
-  const getDefaultDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
 
   const formData = reactive<TaskProgress>({
     id: 0,

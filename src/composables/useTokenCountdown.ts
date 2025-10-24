@@ -1,8 +1,35 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import axios from '../services/axiosInterceptor';
 
 export function useTokenCountdown() {
   const remainingTime = ref<number>(0);
+  const isTokenLoading = ref<boolean>(false);
   let countdownInterval: number | null = null;
+
+  // 重新獲取 token
+  const refreshToken = async () => {
+    try {
+      isTokenLoading.value = true; // 开始加载
+      stopCountdown(); // 先停止现有计时器
+
+      const response = await axios.post('/token/refresh', {
+        token: localStorage.getItem('token'),
+      });
+
+      if (response.data.ok) {
+        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('tokenExpiresIn', response.data.expires_in);
+        localStorage.setItem('tokenTimestamp', Date.now().toString());
+        startCountdown();
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      // 如果刷新失敗，重定向到登入頁面
+      window.location.href = '/';
+    } finally {
+      isTokenLoading.value = false; // 结束加载
+    }
+  };
 
   const startCountdown = () => {
     const expiresIn = localStorage.getItem('tokenExpiresIn');
@@ -51,7 +78,9 @@ export function useTokenCountdown() {
   return {
     remainingTime,
     formattedTime,
+    isTokenLoading,
     startCountdown,
     stopCountdown,
+    refreshToken,
   };
 }

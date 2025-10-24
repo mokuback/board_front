@@ -71,6 +71,7 @@
     localStorage.removeItem('isAdmin');
     localStorage.removeItem('tokenExpiresIn');
     localStorage.removeItem('tokenTimestamp');
+    localStorage.removeItem('isLineId');
 
     if (timer !== null) {
       clearInterval(timer);
@@ -589,7 +590,7 @@
     bottom: 60px;
     right: 20px;
     padding: 12px 24px;
-    background-color: #4caf50;
+    background-color: rgba(76, 175, 80, 0.6);
     color: white;
     border: none;
     border-radius: 24px;
@@ -601,7 +602,7 @@
   }
 
   .float-button:hover {
-    background-color: #45a049;
+    background-color: rgba(69, 160, 73, 0.7); /* hover时也保持半透明 */
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
@@ -610,16 +611,17 @@
     position: fixed;
     bottom: 60px;
     left: 20px;
-    background: white;
+    background: rgba(173, 216, 230, 0.6); /* 改为淡淡的灰色背景 */
     padding: 10px 15px;
     border-radius: 25px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     z-index: 100;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: all 0.3s ease;
   }
 
   .floating-user-info:hover {
+    background: rgba(135, 206, 235, 0.7); /* hover时稍微加深 */
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }

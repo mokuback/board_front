@@ -67,6 +67,7 @@
   import { showNotification } from '../services/notificationService';
   import { createApiError } from '../services/errorService';
   import { showLoading, hideLoading, useLoading } from '../services/loadingService';
+  import { validateLineId } from '../utils/statusUtils';
 
   const router = useRouter();
   const username = ref('');
@@ -142,6 +143,7 @@
         localStorage.setItem('isAdmin', data.is_admin);
         localStorage.setItem('tokenExpiresIn', data.expires_in); // 存储token有效期
         localStorage.setItem('tokenTimestamp', Date.now().toString()); // 存储获取token的时间戳
+        localStorage.setItem('isLineId', validateLineId(username.value) ? 'true' : 'false');
 
         router.push(route); // 使用传入的路由参数
       } else {
@@ -165,7 +167,7 @@
   };
 
   onMounted(() => {
-    initializeLiff();
+    //initializeLiff();
   });
 </script>
 
