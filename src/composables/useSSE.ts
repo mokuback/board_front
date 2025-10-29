@@ -26,7 +26,7 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
   const getSSEToken = async () => {
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/sse/token`);
-      return response.data.token;
+      return response.data.sse_token;
     } catch (error) {
       console.error('获取 SSE token 失败:', error);
       throw error;
@@ -66,7 +66,7 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
 
       // 使用短期 token 建立 SSE 连接
       eventSource.value = new EventSource(
-        `${import.meta.env.VITE_API_BASE_URL}/sse/notify?token=${sseToken}&device_id=${deviceId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/sse/notify?sse_token=${sseToken}&device_id=${deviceId}`,
       );
 
       eventSource.value.onopen = () => {
@@ -95,25 +95,12 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
           }
 
           showNotification(
-            `任务进度更新: ${category_id} - ${item_id} - ${progress_id} (${last_executed})`,
+            `任务进度更新(SSE): ${category_id} - ${item_id} - ${progress_id} (${last_executed})`,
             'info',
             10000,
           );
         }
       };
-
-      // eventSource.value.onmessage = event => {
-      //   const data = JSON.parse(event.data);
-      //   if (data.type === LINE_NOTIFY) {
-      //     const { id, category_id, item_id, progress_id, last_executed } = data.message;
-
-      //     showNotification(
-      //       `任务进度更新: ${category_id} - ${item_id} - ${progress_id} (${last_executed})`,
-      //       'info',
-      //       10000,
-      //     );
-      //   }
-      // };
 
       eventSource.value.onerror = error => {
         console.error('SSE Error:', error);

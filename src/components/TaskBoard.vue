@@ -431,7 +431,18 @@
                       <!-- <span class="btn-icon" @click="getBackDetails(currentCategoryId, item.id, progress.id)">⚙️</span> -->
                       <span
                         class="btn-icon"
-                        @click="item.user_id && testSendToUser(item.user_id, currentCategoryId, item.id, progress.id)"
+                        @click="
+                          item.user_id &&
+                            progress.notifies &&
+                            progress.notifies.length > 0 &&
+                            testSendToUser(
+                              item.user_id,
+                              progress.notifies?.[0]?.id || 0,
+                              currentCategoryId,
+                              item.id,
+                              progress.id,
+                            )
+                        "
                         >⚙️</span
                       >
                     </button>

@@ -4,7 +4,6 @@ import { showLoading, hideLoading } from '../services/loadingService';
 import { useRouter } from 'vue-router';
 import { showNotification } from '../services/notificationService';
 import { useConfirmDialog } from '../utils/confirmDialog';
-import { type NotifyRunMode } from '../utils/constants';
 import { useSSE } from './useSSE';
 import type { TaskNotify, TaskProgress, TaskItem, TaskCategory } from '../types/task';
 
@@ -973,6 +972,7 @@ export function useTaskBoard() {
 
   const testSendToUser = async (
     userId: number,
+    notifyId: number,
     currentCategoryId: number,
     currentItemId: number,
     progressId: number,
@@ -981,6 +981,7 @@ export function useTaskBoard() {
       const response = await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/test/send-to-user/${userId}`,
         {
+          notify_id: notifyId,
           category_id: currentCategoryId,
           item_id: currentItemId,
           progress_id: progressId,
