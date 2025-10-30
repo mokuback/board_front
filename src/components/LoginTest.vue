@@ -45,7 +45,7 @@
           LINE 登入
         </button>
       </div>
-
+      <div>{{ baseURL }}</div>
       <div v-if="errorMessage" class="error-message">
         {{ errorMessage }}
       </div>
@@ -77,6 +77,7 @@
   const statusMessage = ref<string>('');
   const errorMessage = ref('');
   const responseData = ref('');
+  const baseURL = ref(import.meta.env.VITE_API_BASE_URL);
 
   const handleLineLogin = () => {
     initializeLiff();
