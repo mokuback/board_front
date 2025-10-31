@@ -168,7 +168,7 @@
   };
 
   onMounted(() => {
-    //initializeLiff();
+    initializeLiff();
   });
 </script>
 
