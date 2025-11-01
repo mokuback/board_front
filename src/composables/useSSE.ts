@@ -48,14 +48,12 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
   const connect = async () => {
     if (!localStorage.getItem('token')) {
       console.log('用户未登录，停止SSE连接');
+      disconnect(); // 确保完全断开
       return;
     }
 
-    // 先断开现有连接
-    if (eventSource.value) {
-      eventSource.value.close();
-      eventSource.value = null;
-    }
+    // 先断开现有连接并清理定时器
+    disconnect();
 
     try {
       showNotification('正在與推送服務連線，請稍候...', 'info');
@@ -95,15 +93,17 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
           }
 
           showNotification(
-            `任务进度更新(SSE): ${category_id} - ${item_id} - ${progress_id} (${last_executed})`,
+            `(後端 SSE 推送): ${category_id} - ${item_id} - ${progress_id} (${last_executed})`,
             'info',
-            10000,
+            3000,
           );
         }
       };
 
       eventSource.value.onerror = error => {
         console.error('SSE Error:', error);
+        // 完全断开连接
+        disconnect();
         if (retryCount < MAX_RETRIES) {
           retryCount++;
           showNotification(`連線發生錯誤，正在進行第 ${retryCount} 次重連...`, 'error');
@@ -112,25 +112,32 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
           setTimeout(() => connect(), delay);
         } else {
           showNotification('已達最大重連次數，請重新整理頁面', 'error');
-          disconnect();
         }
       };
     } catch (error) {
       console.error('SSE Error:', error);
       showNotification('建立 SSE 連線失敗', 'error');
+      disconnect(); // 确保出错时也完全断开
     }
   };
 
   const disconnect = () => {
+    // 清理 EventSource
     if (eventSource.value) {
       eventSource.value.close();
       eventSource.value = null;
-      showNotification('已斷開 SSE 連線');
     }
+
+    // 清理定时器
     if (tokenRefreshInterval) {
       clearInterval(tokenRefreshInterval);
       tokenRefreshInterval = null;
     }
+
+    // 重置重试计数
+    retryCount = 0;
+
+    showNotification('已斷開 SSE 連線');
   };
 
   return {

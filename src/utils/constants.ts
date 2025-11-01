@@ -2,6 +2,9 @@
 // 0: 正常 1: 完成 2: 停用
 export type TaskStatus = 0 | 1 | 2;
 
+// 無定時發通知的生命週期環境，也不使用SSE
+export const NO_LIFESPAN_ENVS = ['vercel', 'test'];
+
 export const TASK_STATUS = {
   NORMAL: 0,
   COMPLETED: 1,

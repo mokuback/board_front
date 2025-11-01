@@ -168,7 +168,10 @@
   };
 
   onMounted(() => {
-    initializeLiff();
+    // 仅在非本地环境时初始化 LIFF
+    if (import.meta.env.VITE_ENV !== 'local') {
+      initializeLiff();
+    }
   });
 </script>
 
