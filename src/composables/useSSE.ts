@@ -10,6 +10,7 @@ const RETRY_DELAY = 10000;
 const LINE_NOTIFY = 'line_notify';
 let retryCount = 0;
 let tokenRefreshInterval: number | null = null;
+let isConnecting = false; // 添加连接状态标记
 
 export const useSSE = (tasks: Ref<TaskCategory[]>) => {
   // 生成设备ID
@@ -33,12 +34,27 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
     }
   };
 
+  // 检查连接是否健康
+  const isConnectionHealthy = () => {
+    return eventSource.value?.readyState === EventSource.OPEN;
+  };
+
   // 定期刷新 token
   const startTokenRefresh = () => {
-    // 每4分钟刷新一次 token（token 有效期为5分钟）
+    if (tokenRefreshInterval) {
+      clearInterval(tokenRefreshInterval);
+    }
+
     tokenRefreshInterval = window.setInterval(async () => {
       try {
-        await connect();
+        // 检查连接状态
+        if (isConnectionHealthy()) {
+          // 如果连接正常，只刷新 token
+          await getSSEToken();
+        } else {
+          // 连接异常时才重新连接
+          await connect();
+        }
       } catch (error) {
         console.error('Token refresh failed:', error);
       }
@@ -48,14 +64,24 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
   const connect = async () => {
     if (!localStorage.getItem('token')) {
       console.log('用户未登录，停止SSE连接');
-      disconnect(); // 确保完全断开
+      disconnect();
       return;
     }
 
-    // 先断开现有连接并清理定时器
-    disconnect();
+    // 防止重复连接
+    if (isConnecting) {
+      console.log('正在连接中，跳过重复连接');
+      return;
+    }
+
+    isConnecting = true;
 
     try {
+      // 只有在连接异常时才断开现有连接
+      if (!isConnectionHealthy()) {
+        disconnect();
+      }
+
       showNotification('正在與推送服務連線，請稍候...', 'info');
 
       // 获取短期 token
@@ -69,41 +95,48 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
 
       eventSource.value.onopen = () => {
         showNotification('已連線，開始接收通知');
-        retryCount = 0; // 重置重试计数器
-        startTokenRefresh(); // 开始定期刷新 token
+        retryCount = 0;
+        isConnecting = false;
+        startTokenRefresh();
       };
 
       eventSource.value.onmessage = event => {
-        const data = JSON.parse(event.data);
-        if (data.type === LINE_NOTIFY) {
-          const { id, category_id, item_id, progress_id, last_executed } = data.message;
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === LINE_NOTIFY) {
+            const { id, category_id, item_id, progress_id, last_executed } = data.message;
 
-          // 直接更新传入的 tasks
-          if (tasks.value && tasks.value.length > 0) {
-            const category = tasks.value.find(c => c.id === category_id);
-            if (category?.items) {
-              const item = category.items.find(i => i.id === item_id);
-              if (item?.progresses) {
-                const progress = item.progresses.find(p => p.id === progress_id);
-                if (progress && progress.notifies && progress.notifies.length > 0) {
-                  progress.notifies[0].last_executed = last_executed;
+            // 直接更新传入的 tasks
+            if (tasks.value && tasks.value.length > 0) {
+              const category = tasks.value.find(c => c.id === category_id);
+              if (category?.items) {
+                const item = category.items.find(i => i.id === item_id);
+                if (item?.progresses) {
+                  const progress = item.progresses.find(p => p.id === progress_id);
+                  if (progress && progress.notifies && progress.notifies.length > 0) {
+                    progress.notifies[0].last_executed = last_executed;
+                  }
                 }
               }
             }
-          }
 
-          showNotification(
-            `(後端 SSE 推送): ${category_id} - ${item_id} - ${progress_id} (${last_executed})`,
-            'info',
-            3000,
-          );
+            showNotification(
+              `(後端 SSE 推送): ${category_id} - ${item_id} - ${progress_id} (${last_executed})`,
+              'info',
+              3000,
+            );
+          }
+        } catch (error) {
+          console.error('Message processing error:', error);
+          // 消息处理错误不需要断开连接
         }
       };
 
       eventSource.value.onerror = error => {
         console.error('SSE Error:', error);
-        // 完全断开连接
+        isConnecting = false;
         disconnect();
+
         if (retryCount < MAX_RETRIES) {
           retryCount++;
           showNotification(`連線發生錯誤，正在進行第 ${retryCount} 次重連...`, 'error');
@@ -116,8 +149,9 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
       };
     } catch (error) {
       console.error('SSE Error:', error);
+      isConnecting = false;
       showNotification('建立 SSE 連線失敗', 'error');
-      disconnect(); // 确保出错时也完全断开
+      disconnect();
     }
   };
 
@@ -134,8 +168,9 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
       tokenRefreshInterval = null;
     }
 
-    // 重置重试计数
+    // 重置状态
     retryCount = 0;
+    isConnecting = false;
 
     showNotification('已斷開 SSE 連線');
   };
