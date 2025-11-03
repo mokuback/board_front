@@ -158,7 +158,7 @@ export const useSSE = (tasks: Ref<TaskCategory[]>) => {
 
       // 错误处理
       eventSource.value.onerror = error => {
-        console.error('SSE Error:', error);
+        showNotification(`SSE Error:${error}, 正在進行重連`, 'error');
         isConnecting = false;
 
         const now = Date.now();
