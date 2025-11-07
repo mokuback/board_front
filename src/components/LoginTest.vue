@@ -45,7 +45,7 @@
           LINE 登入
         </button>
       </div>
-      <div>{{ baseURL }}</div>
+
       <div v-if="errorMessage" class="error-message">
         {{ errorMessage }}
       </div>
@@ -53,6 +53,10 @@
       <div v-if="responseData" class="response-container">
         <h3>後端回應資料：</h3>
         <pre>{{ responseData }}</pre>
+      </div>
+      <div class="base-url">
+        <span>{{ baseURL }}</span>
+        <span>V 1.0.0</span>
       </div>
     </div>
     <router-view></router-view>
@@ -78,6 +82,8 @@
   const errorMessage = ref('');
   const responseData = ref('');
   const baseURL = ref(import.meta.env.VITE_API_BASE_URL);
+  const env = ref(import.meta.env.VITE_ENV);
+  const NO_TASK_ENVS = ['vercel', 'test'];
 
   const handleLineLogin = () => {
     initializeLiff();
@@ -164,6 +170,11 @@
   };
 
   const handleTaskPanelLogin = async () => {
+    // 检查环境是否在 NO_TASK_ENVS 中
+    if (NO_TASK_ENVS.includes(env.value)) {
+      showNotification('目前環境不支援此操作', 'error');
+      return;
+    }
     await handleLoginWithRoute('/task');
   };
 
@@ -194,6 +205,24 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     padding: 30px;
     transition: transform 0.3s ease;
+    position: relative;
+    padding-bottom: 35px;
+  }
+
+  .base-url {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 15px;
+    background: linear-gradient(180deg, #f1f8e9 0%, #c8e6c9 100%);
+    font-size: 12px;
+    color: #2e7d32;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
   }
 
   .login-card:hover {

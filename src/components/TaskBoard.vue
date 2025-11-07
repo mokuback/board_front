@@ -10,6 +10,7 @@
   import { useTokenCountdown } from '../composables/useTokenCountdown';
   import ProgressDialogStatus from './ProgressDialogStatus.vue';
   import AddNotifyDialog from './AddNotifyDialog.vue';
+  import DataTableDialog from './DataTableDialog.vue';
   import { showNotification } from '../services/notificationService';
   import { NOTIFY_RUN_MODE_TEXT, getWeekDaysText, type TaskStatus } from '../utils/constants';
   import NotifyManagerDialog from './NotifyManagerDialog.vue';
@@ -151,6 +152,9 @@
     showNotifyDialog,
     showNotifyManagerDialog,
     taskNotifyServiceState,
+    showDataTableDialog,
+    listData,
+    isLoadingList,
     toggleTaskItems,
     toggleItemProgress,
     expandAllProgress,
@@ -186,11 +190,14 @@
     getBackDetails,
     openNotifyManagerDialog,
     updateNotifyListForBack,
+    getNotifyListForBack,
     removeLastExecuted,
     deleteNotify,
     testSendToUser,
     controlTaskNotifyService,
     handleControlTaskNotifyService,
+    openListDataDialog,
+    getListForBack,
   } = useTaskBoard();
 </script>
 
@@ -279,8 +286,16 @@
     <NotifyManagerDialog
       v-model="showNotifyManagerDialog"
       @update-list="updateNotifyListForBack"
+      @get-list="openListDataDialog(getNotifyListForBack)"
       @remove-executed="() => removeLastExecuted(null)"
       @delete-notify="() => deleteNotify(null)"
+    />
+    <DataTableDialog
+      v-model="showDataTableDialog"
+      title="数据列表"
+      :data="listData"
+      :loading="isLoadingList"
+      @refresh="getListForBack"
     />
     <!-- 侧边栏 -->
     <div class="sidebar" :class="{ 'sidebar-active': showSidebar }">

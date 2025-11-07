@@ -21,6 +21,7 @@ export function useTaskBoard() {
   const showStatusDialog = ref(false);
   const showNotifyDialog = ref(false);
   const showNotifyManagerDialog = ref(false);
+  const showDataTableDialog = ref(false);
 
   const selectedCategory = ref<TaskCategory | null>(null);
   const contextMenuPosition = ref({ x: 0, y: 0 });
@@ -42,6 +43,9 @@ export function useTaskBoard() {
   const currentCategoryId = ref(0); //數據操操作相關，與currentCategory要同步，通过 handleCategoryClick 函数改变(主要內容區塊全域可使用)
   const currentItemId = ref(0); //通过 openAddProgressDialog 函数中改变(只用於新增/修改進度的臨時變量傳遞)
   const timer = ref<number | null>(null);
+  const listData = ref([]);
+  const isLoadingList = ref(false);
+  const currentListMethod = ref<Function | null>(null);
   const taskNotifyServiceState = ref({
     running: false,
     count: 0,
@@ -71,6 +75,53 @@ export function useTaskBoard() {
       showNotifyManagerDialog.value = true;
     } else {
       showNotification('僅限管理員使用', 'error');
+    }
+  };
+
+  const openListDataDialog = async (fetchMethod: Function) => {
+    showDataTableDialog.value = true;
+    isLoadingList.value = true;
+    currentListMethod.value = fetchMethod;
+
+    try {
+      const response = await fetchMethod();
+      listData.value = response.data || [];
+    } catch (error) {
+      console.error('获取数据失败:', error);
+      listData.value = [];
+    } finally {
+      isLoadingList.value = false;
+    }
+  };
+
+  const getListForBack = async () => {
+    if (!currentListMethod.value) return;
+
+    isLoadingList.value = true;
+    try {
+      const response = await currentListMethod.value();
+      listData.value = response.data || [];
+    } catch (error) {
+      console.error('刷新数据失败:', error);
+    } finally {
+      isLoadingList.value = false;
+    }
+  };
+
+  const getNotifyListForBack = async () => {
+    try {
+      showLoading('获取通知列表中...');
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/admin/get-notify-list/`);
+
+      if (response.data.notifies) {
+        //showNotification('获取后端通知列表成功', 'success');
+        return { data: response.data.notifies };
+      }
+    } catch (error) {
+      console.error('获取后端通知列表失败:', error);
+      // 错误处理由 axiosInterceptor.ts 处理
+    } finally {
+      hideLoading();
     }
   };
 
@@ -1184,6 +1235,9 @@ export function useTaskBoard() {
     showNotifyDialog,
     showNotifyManagerDialog,
     taskNotifyServiceState,
+    showDataTableDialog,
+    listData,
+    isLoadingList,
     toggleTaskItems,
     toggleItemProgress,
     expandAllProgress,
@@ -1223,10 +1277,13 @@ export function useTaskBoard() {
     getBackDetails,
     openNotifyManagerDialog,
     updateNotifyListForBack,
+    getNotifyListForBack,
     removeLastExecuted,
     deleteNotify,
     testSendToUser,
     controlTaskNotifyService,
     handleControlTaskNotifyService,
+    openListDataDialog,
+    getListForBack,
   };
 }

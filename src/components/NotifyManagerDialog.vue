@@ -4,12 +4,16 @@
       <div class="dialog-content">
         <h3>通知管理</h3>
         <div class="button-group-vertical">
+          <button type="button" class="status-button" @click="handleGetList">
+            <span class="status-icon">📝</span>
+            <span class="status-text">獲取後端通知列表</span>
+          </button>
           <button type="button" class="status-button" @click="handleUpdateList">
             <span class="status-icon">🔄</span>
             <span class="status-text">更新後端通知列表</span>
           </button>
           <button type="button" class="status-button" @click="handleRemoveLastExecuted">
-            <span class="status-icon">📝</span>
+            <span class="status-icon">🏷️</span>
             <span class="status-text">移除所有通知戮記</span>
           </button>
           <button type="button" class="status-button" @click="handleDeleteNotify">
@@ -33,7 +37,7 @@
     },
   });
 
-  const emit = defineEmits(['update:modelValue', 'update-list', 'remove-executed', 'delete-notify']);
+  const emit = defineEmits(['update:modelValue', 'update-list', 'get-list', 'remove-executed', 'delete-notify']);
 
   const handleCancel = () => {
     emit('update:modelValue', false);
@@ -42,6 +46,10 @@
   const handleUpdateList = () => {
     emit('update-list');
     //emit('update:modelValue', false);
+  };
+
+  const handleGetList = () => {
+    emit('get-list');
   };
 
   const handleRemoveLastExecuted = () => {
