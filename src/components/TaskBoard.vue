@@ -168,6 +168,8 @@
     closeContextMenu,
     handleDeleteCategory,
     handleEditCategory,
+    handleJSONCategory,
+    handleHTMLCategory,
     openAddCategoryDialog,
     handleUpdateCategory,
     handleCategoryAction,
@@ -202,310 +204,333 @@
 </script>
 
 <template>
-  <div class="task-board">
-    <div
-      v-if="isAdmin"
-      class="notify-status-btn"
-      :class="{ disabled: !taskNotifyServiceState.running }"
-      @click="handleControlTaskNotifyService(!taskNotifyServiceState.running)"
-    >
-      <span :class="{ 'bell-vibrating': taskNotifyServiceState.running }">
-        {{ taskNotifyServiceState.running ? '🔔' : '🔕' }}
-      </span>
+  <div class="task-window">
+    <div class="window-header">
+      <span class="window-title">📅 工作管理系统</span>
     </div>
-    <!-- 漂浮的token计时器 -->
-    <div class="token-countdown" @click="refreshToken">
-      <span v-if="isTokenLoading" class="loading-spinner"></span>
-      <span v-else>{{ formattedTime }}</span>
-    </div>
-    <!-- 浮动菜单按钮 -->
-    <button class="floating-menu-btn" @click="toggleSidebar" title="菜单">
-      <span class="menu-icon"></span>
-      <span class="menu-icon"></span>
-      <span class="menu-icon"></span>
-    </button>
-    <div
-      v-if="showContextMenu"
-      class="context-menu"
-      :style="{
-        left: contextMenuPosition.x + 'px',
-        top: contextMenuPosition.y + 'px',
-      }"
-    >
-      <h4>{{ selectedCategory?.category_name }}</h4>
-      <div class="menu-item" @click="selectedCategory?.id && handleEditCategory(selectedCategory)">修改分類</div>
-      <div class="menu-item" @click="selectedCategory?.id && handleDeleteCategory(selectedCategory)">刪除分類</div>
-    </div>
-    <AddCategoryDialog
-      ref="addCategoryDialogRef"
-      v-model="showAddCategoryDialog"
-      :title="dialogTitle"
-      :is-edit="dialogIsEdit"
-      :edit-data="dialogEditData"
-      :categories="categories"
-      @submit="handleCategorySubmit"
-      @clear="handleCategoryClear"
-    />
-    <!-- 在模板中适当位置添加 -->
-    <AddItemDialog
-      ref="addItemDialogRef"
-      v-model="showAddItemDialog"
-      :title="itemDialogTitle"
-      :isEdit="itemDialogIsEdit"
-      :editData="itemDialogEditData"
-      :currentCategoryId="currentCategoryId"
-      :items="getCurrentCategory?.items || []"
-      @submit="handleItemSubmit"
-      @clear="handleItemClear"
-    />
-    <AddProgressDialog
-      ref="addProgressDialogRef"
-      v-model="showAddProgressDialog"
-      :title="progressDialogTitle"
-      :isEdit="progressDialogIsEdit"
-      :editData="progressDialogEditData"
-      :currentItem="getCurrentItem ?? null"
-      :progresses="getCurrentItem?.progresses || []"
-      @submit="handleProgressSubmit"
-      @clear="handleProgressClear"
-    />
-    <ProgressDialogStatus
-      v-model="showStatusDialog"
-      :progress-id="selectedProgress?.id ?? 0"
-      @status-updated="handleStatusChange"
-    />
-    <AddNotifyDialog
-      ref="addNotifyDialogRef"
-      v-model="showNotifyDialog"
-      :title="notifyDialogTitle"
-      :isEdit="notifyDialogIsEdit"
-      :editData="notifyDialogEditData"
-      :progress="selectedProgress"
-      @submit="handleNotifySubmit"
-    />
-    <NotifyManagerDialog
-      v-model="showNotifyManagerDialog"
-      @update-list="updateNotifyListForBack"
-      @get-list="openListDataDialog(getNotifyListForBack)"
-      @remove-executed="() => removeLastExecuted(null)"
-      @delete-notify="() => deleteNotify(null)"
-    />
-    <DataTableDialog
-      v-model="showDataTableDialog"
-      title="数据列表"
-      :data="listData"
-      :loading="isLoadingList"
-      @refresh="getListForBack"
-    />
-    <!-- 侧边栏 -->
-    <div class="sidebar" :class="{ 'sidebar-active': showSidebar }">
-      <div class="sidebar-content">
-        <h3>選單</h3>
-        <ul class="menu-list">
-          <li
-            @click="
-              openAddCategoryDialog(true);
-              toggleSidebar();
-            "
-          >
-            <span class="menu-item-icon">📁</span>新增分類
-          </li>
-          <li @click="refreshData"><span class="menu-item-icon">🔄</span>重讀工作</li>
-          <li @click="exportTaskData"><span class="menu-item-icon">📥</span>匯出工作</li>
-          <li v-if="isAdmin" @click="openNotifyManagerDialog"><span class="menu-item-icon">🔔</span>通知管理</li>
-          <li @click="logout"><span class="menu-item-icon">🚪</span>離開</li>
-        </ul>
-      </div>
-    </div>
-    <!-- 遮罩层 -->
-    <div v-if="showSidebar" class="sidebar-overlay" @click="toggleSidebar"></div>
-
-    <nav class="categories-nav">
-      <div class="nav-buttons"></div>
-
-      <button
-        v-for="cat in categories"
-        :key="cat.id"
-        :class="['category-btn', { active: currentCategory === cat.id }]"
-        @click="handleCategoryClick(cat)"
-        @contextmenu="handleContextMenu($event, cat)"
+    <div class="task-board">
+      <div
+        v-if="isAdmin"
+        class="notify-status-btn"
+        :class="{ disabled: !taskNotifyServiceState.running }"
+        @click="handleControlTaskNotifyService(!taskNotifyServiceState.running)"
       >
-        {{ cat.category_name }}
+        <span :class="{ 'bell-vibrating': taskNotifyServiceState.running }">
+          {{ taskNotifyServiceState.running ? '🔔' : '🔕' }}
+        </span>
+      </div>
+      <!-- 漂浮的token计时器 -->
+      <div class="token-countdown" @click="refreshToken">
+        <span v-if="isTokenLoading" class="loading-spinner"></span>
+        <span v-else>{{ formattedTime }}</span>
+      </div>
+      <!-- 浮动菜单按钮 -->
+      <button class="floating-menu-btn" @click="toggleSidebar" title="菜单">
+        <span class="menu-icon"></span>
+        <span class="menu-icon"></span>
+        <span class="menu-icon"></span>
       </button>
-    </nav>
-
-    <!-- 悬浮按钮移到这里 -->
-    <button class="floating-add-btn" @click="openAddCategoryDialog(true)" title="新增分類">
-      <span class="add-icon">+</span>
-    </button>
-
-    <!-- 主要内容区域 -->
-    <main class="main-content">
-      <div class="category-header">
-        <h2 class="category-title">{{ getCurrentCategoryName }}</h2>
-        <div class="category-actions">
-          <!-- 展开/收起按钮 -->
-          <button class="category-action-btn-btn" @click="expandAllProgress" title="展开所有进度">
-            <span class="arrow-icon down">▼</span>
-          </button>
-          <button class="category-action-btn-btn" @click="collapseAllProgress" title="收起所有进度">
-            <span class="arrow-icon up">▲</span>
-          </button>
-          <button
-            v-if="getCurrentCategory"
-            class="category-action-btn"
-            @click="handleCategoryAction('add', getCurrentCategory)"
-            title="新增項目"
-          >
-            <span class="btn-icon">➕</span>
-          </button>
-          <button
-            v-if="getCurrentCategory"
-            class="category-action-btn"
-            @click="handleCategoryAction('edit', getCurrentCategory)"
-            title="修改分類"
-          >
-            <span class="btn-icon">✏️</span>
-          </button>
-          <button
-            v-if="getCurrentCategory"
-            class="category-action-btn"
-            @click="handleCategoryAction('delete', getCurrentCategory)"
-            title="刪除分類"
-          >
-            <span class="btn-icon">🗑️</span>
-          </button>
+      <div
+        v-if="showContextMenu"
+        class="context-menu"
+        :style="{
+          left: contextMenuPosition.x + 'px',
+          top: contextMenuPosition.y + 'px',
+        }"
+      >
+        <h4>{{ selectedCategory?.category_name }}</h4>
+        <div class="menu-item" @click="selectedCategory?.id && handleEditCategory(selectedCategory)">
+          <span class="menu-item-icon">✏️</span>修改分類
+        </div>
+        <div class="menu-item" @click="selectedCategory?.id && handleJSONCategory(selectedCategory)">
+          <span class="menu-item-icon">↗️</span>匯出JSON
+        </div>
+        <div class="menu-item" @click="selectedCategory?.id && handleHTMLCategory(selectedCategory)">
+          <span class="menu-item-icon">📑</span>匯出HTML
+        </div>
+        <div class="menu-item" @click="selectedCategory?.id && handleDeleteCategory(selectedCategory)">
+          <span class="menu-item-icon">🗑️</span>刪除分類
         </div>
       </div>
-      <div v-for="task in filteredTasks" :key="task.id" class="task-container">
-        <!-- Items列表 -->
-        <div v-if="task.showItems" class="items-container">
-          <div v-for="item in task.items" :key="item.id" class="item-wrapper">
-            <!-- Item卡片 -->
-            <div class="item-card" @click="toggleItemProgress(item)">
-              <div class="item-header">
-                <span class="item-name">{{ item.item_name }}</span>
-                <div class="item-meta">
-                  <span class="item-date">{{ formatDateTime(item.item_at) }}</span>
-                  <span class="progress-count">({{ item?.progresses?.length || 0 }})</span>
+      <AddCategoryDialog
+        ref="addCategoryDialogRef"
+        v-model="showAddCategoryDialog"
+        :title="dialogTitle"
+        :is-edit="dialogIsEdit"
+        :edit-data="dialogEditData"
+        :categories="categories"
+        @submit="handleCategorySubmit"
+        @clear="handleCategoryClear"
+      />
+      <!-- 在模板中适当位置添加 -->
+      <AddItemDialog
+        ref="addItemDialogRef"
+        v-model="showAddItemDialog"
+        :title="itemDialogTitle"
+        :isEdit="itemDialogIsEdit"
+        :editData="itemDialogEditData"
+        :currentCategoryId="currentCategoryId"
+        :items="getCurrentCategory?.items || []"
+        @submit="handleItemSubmit"
+        @clear="handleItemClear"
+      />
+      <AddProgressDialog
+        ref="addProgressDialogRef"
+        v-model="showAddProgressDialog"
+        :title="progressDialogTitle"
+        :isEdit="progressDialogIsEdit"
+        :editData="progressDialogEditData"
+        :currentItem="getCurrentItem ?? null"
+        :progresses="getCurrentItem?.progresses || []"
+        @submit="handleProgressSubmit"
+        @clear="handleProgressClear"
+      />
+      <ProgressDialogStatus
+        v-model="showStatusDialog"
+        :progress-id="selectedProgress?.id ?? 0"
+        @status-updated="handleStatusChange"
+      />
+      <AddNotifyDialog
+        ref="addNotifyDialogRef"
+        v-model="showNotifyDialog"
+        :title="notifyDialogTitle"
+        :isEdit="notifyDialogIsEdit"
+        :editData="notifyDialogEditData"
+        :progress="selectedProgress"
+        @submit="handleNotifySubmit"
+      />
+      <NotifyManagerDialog
+        v-model="showNotifyManagerDialog"
+        @update-list="updateNotifyListForBack"
+        @get-list="openListDataDialog(getNotifyListForBack)"
+        @remove-executed="() => removeLastExecuted(null)"
+        @delete-notify="() => deleteNotify(null)"
+      />
+      <DataTableDialog
+        v-model="showDataTableDialog"
+        title="数据列表"
+        :data="listData"
+        :loading="isLoadingList"
+        @refresh="getListForBack"
+      />
+      <!-- 侧边栏 -->
+      <div class="sidebar" :class="{ 'sidebar-active': showSidebar }">
+        <div class="sidebar-content">
+          <h3>選單</h3>
+          <ul class="menu-list">
+            <li
+              @click="
+                openAddCategoryDialog(true);
+                toggleSidebar();
+              "
+            >
+              <span class="menu-item-icon">📁</span>新增分類
+            </li>
+            <li @click="refreshData"><span class="menu-item-icon">🔄</span>重讀工作</li>
+            <li @click="exportTaskData"><span class="menu-item-icon">📥</span>匯出工作</li>
+            <li v-if="isAdmin" @click="openNotifyManagerDialog"><span class="menu-item-icon">🔔</span>通知管理</li>
+            <li @click="logout"><span class="menu-item-icon">🚪</span>離開</li>
+          </ul>
+        </div>
+      </div>
+      <!-- 遮罩层 -->
+      <div v-if="showSidebar" class="sidebar-overlay" @click="toggleSidebar"></div>
+
+      <nav class="categories-nav">
+        <div class="nav-buttons"></div>
+
+        <button
+          v-for="cat in categories"
+          :key="cat.id"
+          :class="['category-btn', { active: currentCategory === cat.id }]"
+          @click="handleCategoryClick(cat)"
+          @contextmenu="handleContextMenu($event, cat)"
+        >
+          {{ cat.category_name }}
+        </button>
+      </nav>
+
+      <!-- 悬浮按钮移到这里 -->
+      <button class="floating-add-btn" @click="openAddCategoryDialog(true)" title="新增分類">
+        <span class="add-icon">+</span>
+      </button>
+
+      <!-- 主要内容区域 -->
+      <main class="main-content">
+        <div class="category-header">
+          <h2 class="category-title">{{ getCurrentCategoryName }}</h2>
+          <div class="category-actions">
+            <!-- 展开/收起按钮 -->
+            <button class="category-action-btn-btn" @click="expandAllProgress" title="展开所有进度">
+              <span class="arrow-icon down">▼</span>
+            </button>
+            <button class="category-action-btn-btn" @click="collapseAllProgress" title="收起所有进度">
+              <span class="arrow-icon up">▲</span>
+            </button>
+            <button
+              v-if="getCurrentCategory"
+              class="category-action-btn"
+              @click="handleCategoryAction('add', getCurrentCategory)"
+              title="新增項目"
+            >
+              <span class="btn-icon">➕</span>
+            </button>
+            <button
+              v-if="getCurrentCategory"
+              class="category-action-btn"
+              @click="handleCategoryAction('edit', getCurrentCategory)"
+              title="修改分類"
+            >
+              <span class="btn-icon">✏️</span>
+            </button>
+            <button
+              v-if="getCurrentCategory"
+              class="category-action-btn"
+              @click="handleCategoryAction('delete', getCurrentCategory)"
+              title="刪除分類"
+            >
+              <span class="btn-icon">🗑️</span>
+            </button>
+          </div>
+        </div>
+        <div v-for="task in filteredTasks" :key="task.id" class="task-container">
+          <!-- Items列表 -->
+          <div v-if="task.showItems" class="items-container">
+            <div v-for="item in task.items" :key="item.id" class="item-wrapper">
+              <!-- Item卡片 -->
+              <div class="item-card" @click="toggleItemProgress(item)">
+                <div class="item-header">
+                  <span class="item-name">{{ item.item_name }}</span>
+                  <div class="item-meta">
+                    <span class="item-date">{{ formatDateTime(item.item_at) }}</span>
+                    <span class="progress-count">({{ item?.progresses?.length || 0 }})</span>
+                  </div>
+                </div>
+                <p class="item-content">{{ item.content }}</p>
+                <!-- Item卡片按钮组 -->
+                <div class="item-actions" @click.stop>
+                  <button class="action-btn" @click="handleItemAction('add', item, task)" title="新增進度">
+                    <span class="btn-icon">📊</span>
+                  </button>
+                  <button class="action-btn" @click="handleItemAction('edit', item, task)" title="修改項目">
+                    <span class="btn-icon">📝</span>
+                  </button>
+                  <button class="action-btn" @click="handleItemAction('delete', item, task)" title="刪除項目">
+                    <span class="btn-icon">❌</span>
+                  </button>
                 </div>
               </div>
-              <p class="item-content">{{ item.content }}</p>
-              <!-- Item卡片按钮组 -->
-              <div class="item-actions" @click.stop>
-                <button class="action-btn" @click="handleItemAction('add', item, task)" title="新增進度">
-                  <span class="btn-icon">📊</span>
-                </button>
-                <button class="action-btn" @click="handleItemAction('edit', item, task)" title="修改項目">
-                  <span class="btn-icon">📝</span>
-                </button>
-                <button class="action-btn" @click="handleItemAction('delete', item, task)" title="刪除項目">
-                  <span class="btn-icon">❌</span>
-                </button>
-              </div>
-            </div>
 
-            <!-- Progresses列表 -->
-            <div v-if="item.showProgress" class="progresses-container">
-              <div
-                v-for="progress in item.progresses"
-                :key="progress.id"
-                class="progress-wrapper"
-                :data-status="progress.status"
-              >
-                <!-- 连接线 -->
-                <div class="progress-line"></div>
-                <!-- Progress内容 -->
-                <div class="progress-card">
-                  <div class="progress-header">
-                    <span class="progress-name">{{ progress.progress_name }}</span>
-                    <!-- <span class="progress-status" :data-status="progress.status">
-                      {{ getStatusIcon(progress.status) }} {{ getStatusText(progress.status as TaskStatus) }}
-                    </span> -->
-                    <div class="progress-status" :data-status="progress.status" @click="openStatusDialog(progress)">
-                      {{ getStatusIcon(progress.status) }} {{ getStatusText(progress.status as TaskStatus) }}
+              <!-- Progresses列表 -->
+              <div v-if="item.showProgress" class="progresses-container">
+                <div
+                  v-for="progress in item.progresses"
+                  :key="progress.id"
+                  class="progress-wrapper"
+                  :data-status="progress.status"
+                >
+                  <!-- 连接线 -->
+                  <div class="progress-line"></div>
+                  <!-- Progress内容 -->
+                  <div class="progress-card">
+                    <div class="progress-header">
+                      <span class="progress-name">{{ progress.progress_name }}</span>
+                      <!-- <span class="progress-status" :data-status="progress.status">
+                          {{ getStatusIcon(progress.status) }} {{ getStatusText(progress.status as TaskStatus) }}
+                        </span> -->
+                      <div class="progress-status" :data-status="progress.status" @click="openStatusDialog(progress)">
+                        {{ getStatusIcon(progress.status) }} {{ getStatusText(progress.status as TaskStatus) }}
+                      </div>
                     </div>
-                  </div>
-                  <span class="progress-date">{{ formatDateTime(progress.progress_at) }}</span>
-                  <p class="progress-content">{{ progress.content }}</p>
-                  <!-- Progress卡片按钮组 -->
-                  <div class="progress-actions" @click.stop>
-                    <button class="action-btn" @click="handleProgressAction('notify', progress, item)" title="設定通知">
-                      <span
-                        class="btn-icon"
-                        :class="{ 'speaking-emoji': progress.notifies && progress.notifies.length > 0 }"
+                    <span class="progress-date">{{ formatDateTime(progress.progress_at) }}</span>
+                    <p class="progress-content">{{ progress.content }}</p>
+                    <!-- Progress卡片按钮组 -->
+                    <div class="progress-actions" @click.stop>
+                      <button
+                        class="action-btn"
+                        @click="handleProgressAction('notify', progress, item)"
+                        title="設定通知"
                       >
-                        {{ progress.notifies && progress.notifies.length > 0 ? '📣' : '🔔' }}
-                      </span>
-                    </button>
-                    <button
-                      class="action-btn"
-                      @click="handleProgressAction('settings', progress, item)"
-                      title="進度設定"
-                    >
-                      <!-- <span class="btn-icon" @click="getBackDetails(currentCategoryId, item.id, progress.id)">⚙️</span> -->
-                      <span
-                        class="btn-icon"
-                        @click="
-                          item.user_id &&
-                            progress.notifies &&
-                            progress.notifies.length > 0 &&
-                            testSendToUser(
-                              item.user_id,
-                              progress.notifies?.[0]?.id || 0,
-                              currentCategoryId,
-                              item.id,
-                              progress.id,
-                            )
-                        "
-                        >⚙️</span
+                        <span
+                          class="btn-icon"
+                          :class="{ 'speaking-emoji': progress.notifies && progress.notifies.length > 0 }"
+                        >
+                          {{ progress.notifies && progress.notifies.length > 0 ? '📣' : '🔔' }}
+                        </span>
+                      </button>
+                      <button
+                        class="action-btn"
+                        @click="handleProgressAction('settings', progress, item)"
+                        title="進度設定"
                       >
-                    </button>
-                    <button class="action-btn" @click="handleProgressAction('edit', progress, item)" title="修改進度">
-                      <span class="btn-icon">🔧</span>
-                    </button>
-                    <button class="action-btn" @click="handleProgressAction('delete', progress, item)" title="刪除進度">
-                      <span class="btn-icon">✂️</span>
-                    </button>
-                  </div>
-                  <!-- 通知信息显示 -->
-                  <div v-if="progress.notifies && progress.notifies.length > 0" class="notify-info">
-                    <button class="notify-delete-btn" @click.stop="handleDeleteNotify(progress)" title="刪除通知">
-                      <span class="btn-icon">⛔️</span>
-                    </button>
-                    <div class="notify-detail">
-                      <span class="notify-label">通知模式：</span>
-                      <span class="notify-value">{{ NOTIFY_RUN_MODE_TEXT[progress.notifies[0].run_mode] }}</span>
+                        <!-- <span class="btn-icon" @click="getBackDetails(currentCategoryId, item.id, progress.id)">⚙️</span> -->
+                        <span
+                          class="btn-icon"
+                          @click="
+                            item.user_id &&
+                              progress.notifies &&
+                              progress.notifies.length > 0 &&
+                              testSendToUser(
+                                item.user_id,
+                                progress.notifies?.[0]?.id || 0,
+                                currentCategoryId,
+                                item.id,
+                                progress.id,
+                              )
+                          "
+                          >⚙️</span
+                        >
+                      </button>
+                      <button class="action-btn" @click="handleProgressAction('edit', progress, item)" title="修改進度">
+                        <span class="btn-icon">🔧</span>
+                      </button>
+                      <button
+                        class="action-btn"
+                        @click="handleProgressAction('delete', progress, item)"
+                        title="刪除進度"
+                      >
+                        <span class="btn-icon">✂️</span>
+                      </button>
                     </div>
+                    <!-- 通知信息显示 -->
+                    <div v-if="progress.notifies && progress.notifies.length > 0" class="notify-info">
+                      <button class="notify-delete-btn" @click.stop="handleDeleteNotify(progress)" title="刪除通知">
+                        <span class="btn-icon">⛔️</span>
+                      </button>
+                      <div class="notify-detail">
+                        <span class="notify-label">通知模式：</span>
+                        <span class="notify-value">{{ NOTIFY_RUN_MODE_TEXT[progress.notifies[0].run_mode] }}</span>
+                      </div>
 
-                    <!-- 指定星期模式显示执行星期 -->
-                    <!-- 所有模式都显示开始时间 -->
-                    <div class="notify-detail">
-                      <span class="notify-label">開始時間：</span>
-                      <span class="notify-value">{{ formatDateTime(progress.notifies[0].start_at) }}</span>
-                    </div>
+                      <!-- 指定星期模式显示执行星期 -->
+                      <!-- 所有模式都显示开始时间 -->
+                      <div class="notify-detail">
+                        <span class="notify-label">開始時間：</span>
+                        <span class="notify-value">{{ formatDateTime(progress.notifies[0].start_at) }}</span>
+                      </div>
 
-                    <!-- 非单次模式显示停止时间 -->
-                    <div v-if="progress.notifies[0].run_mode !== 0" class="notify-detail">
-                      <span class="notify-label">停止時間：</span>
-                      <span class="notify-value">{{ formatDateTime(progress.notifies[0].stop_at) }}</span>
-                    </div>
+                      <!-- 非单次模式显示停止时间 -->
+                      <div v-if="progress.notifies[0].run_mode !== 0" class="notify-detail">
+                        <span class="notify-label">停止時間：</span>
+                        <span class="notify-value">{{ formatDateTime(progress.notifies[0].stop_at) }}</span>
+                      </div>
 
-                    <!-- 非单次模式显示执行时间 -->
-                    <div v-if="progress.notifies[0].run_mode !== 0" class="notify-detail">
-                      <span class="notify-label">執行時間：</span>
-                      <span class="notify-value">{{ progress.notifies[0].time_at }}</span>
-                    </div>
+                      <!-- 非单次模式显示执行时间 -->
+                      <div v-if="progress.notifies[0].run_mode !== 0" class="notify-detail">
+                        <span class="notify-label">執行時間：</span>
+                        <span class="notify-value">{{ progress.notifies[0].time_at }}</span>
+                      </div>
 
-                    <div v-if="progress.notifies[0].run_mode === 2" class="notify-detail">
-                      <span class="notify-label">執行星期：</span>
-                      <span class="notify-value">{{ getWeekDaysText(progress.notifies[0].week_at ?? 0) }}</span>
-                    </div>
+                      <div v-if="progress.notifies[0].run_mode === 2" class="notify-detail">
+                        <span class="notify-label">執行星期：</span>
+                        <span class="notify-value">{{ getWeekDaysText(progress.notifies[0].week_at ?? 0) }}</span>
+                      </div>
 
-                    <!-- 显示最后执行时间 -->
-                    <div v-if="progress.notifies[0].last_executed" class="notify-detail last-notify">
-                      <span class="notify-label">最後通知：</span>
-                      <span class="notify-value">{{ formatDateTime(progress.notifies[0].last_executed) }}</span>
+                      <!-- 显示最后执行时间 -->
+                      <div v-if="progress.notifies[0].last_executed" class="notify-detail last-notify">
+                        <span class="notify-label">最後通知：</span>
+                        <span class="notify-value">{{ formatDateTime(progress.notifies[0].last_executed) }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -513,8 +538,8 @@
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -523,6 +548,33 @@
 </style>
 
 <style scoped>
+  .task-window {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f0f2f5;
+  }
+
+  .window-header {
+    position: fixed; /* 添加固定定位 */
+    top: 0; /* 固定在顶部 */
+    left: 0; /* 左对齐 */
+    right: 0; /* 右对齐 */
+    z-index: 1000; /* 确保在最上层 */
+    height: 40px;
+    background: #2c3e50;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .window-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: #ecf0f1;
+  }
   .notify-status-btn {
     position: fixed;
     bottom: 20px; /* 改为底部固定 */
@@ -560,7 +612,7 @@
   /* 浮动菜单按钮样式 */
   .floating-menu-btn {
     position: fixed;
-    top: 20px;
+    top: 60px;
     left: 20px;
     z-index: 1000;
     width: 40px;
@@ -593,13 +645,14 @@
   .task-container {
     margin-top: 16px;
     /* 增加顶部边距 */
-    padding: 16px;
+    padding: 10px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 
   .task-board {
+    padding-top: 56px;
     display: flex;
     height: 100vh;
     margin: 0;
@@ -641,7 +694,7 @@
   .categories-nav {
     width: 240px;
     background: linear-gradient(to bottom, #ffffff, #e8f0fe); /* 與分類抬頭相同的漸變背景 */
-    padding: 20px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -832,7 +885,7 @@
   /* 主要内容区域 */
   .main-content {
     flex: 1;
-    padding: 0 24px 24px;
+    padding: 40px 24px 24px;
     /* 移除顶部内边距 */
     overflow-y: auto;
     background-color: #f8f9fa;
@@ -942,9 +995,9 @@
     margin-top: 16px;
     padding-left: 20px;
     transition: all 0.3s ease-in-out;
-    max-height: 1000px;
+    max-height: none;
     opacity: 1;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .progresses-container.collapsed {
@@ -956,7 +1009,7 @@
 
   .progress-wrapper {
     position: relative;
-    margin-bottom: 24px;
+    margin-bottom: 32px;
     animation: slideIn 0.3s ease-out;
   }
 

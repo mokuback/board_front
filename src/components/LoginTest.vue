@@ -56,7 +56,7 @@
       </div>
       <div class="base-url">
         <span>{{ baseURL }}</span>
-        <span>V 1.0.0</span>
+        <span>V 1.0.1</span>
       </div>
     </div>
     <router-view></router-view>

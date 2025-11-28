@@ -189,7 +189,7 @@
     const startTime = new Date(formData.start_at);
     const minTime = new Date(now.getTime() + 10 * 60 * 1000); // 当前时间 + 10分钟
 
-    /*----------------------------------------------------------------------------    
+    /*正式版時，此處註解要拿掉，發揮檢驗的功能-------------------------------------    
     if (startTime <= minTime) {
       showNotification('開始時間必須晚於當前時間至少十分鐘', 'error');
       return;

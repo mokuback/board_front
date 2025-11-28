@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import { showNotification } from '../services/notificationService';
 import { useConfirmDialog } from '../utils/confirmDialog';
 import { useSSE } from './useSSE';
+import { generateCategoryHtmlTemplate } from '../utils/htmlTemplate';
 import type { TaskNotify, TaskProgress, TaskItem, TaskCategory } from '../types/task';
 
 export function useTaskBoard() {
@@ -94,6 +95,12 @@ export function useTaskBoard() {
     }
   };
 
+  /**
+   * 获取后台列表数据的异步函数
+   * 该函数用于从后台获取列表数据，并处理加载状态和数据更新
+   * 此函數主要提供給 openListDataDialog 使用，調用時需要傳入一個函數參數，
+   * 該函數返回一個 Promise，該 Promise 解析後返回一個包含數據的對象
+   */
   const getListForBack = async () => {
     if (!currentListMethod.value) return;
 
@@ -115,6 +122,7 @@ export function useTaskBoard() {
 
       if (response.data.notifies) {
         //showNotification('获取后端通知列表成功', 'success');
+        showNotifyManagerDialog.value = false;
         return { data: response.data.notifies };
       }
     } catch (error) {
@@ -143,14 +151,85 @@ export function useTaskBoard() {
     }
   };
 
-  const removeLastExecuted = (user_id: number | null = null) => {
-    const message = user_id ? `移除用戶 ${user_id} 的通知戮記功能尚未實作` : '移除所有通知戮記功能尚未實作';
-    showNotification(message);
+  const removeLastExecuted = async (user_id: number | null = null) => {
+    const message = user_id ? `移除用戶 ${user_id} 的通知戮記中...` : '移除所有通知戮記中...';
+    try {
+      showLoading(message);
+      const response = await axios.put(
+        `${import.meta.env.VITE_API_BASE_URL}/admin/remove-last-executed/${user_id || 0}`,
+      );
+      // 更新前端数据
+      if (user_id) {
+        // 清除特定用户的通知戮记
+        tasks.value.forEach(category => {
+          category.items?.forEach(item => {
+            item.progresses?.forEach(progress => {
+              progress.notifies?.forEach(notify => {
+                if (notify.user_id === user_id) {
+                  notify.last_executed = undefined;
+                }
+              });
+            });
+          });
+        });
+      } else {
+        // 清除所有通知戮记
+        tasks.value.forEach(category => {
+          category.items?.forEach(item => {
+            item.progresses?.forEach(progress => {
+              progress.notifies?.forEach(notify => {
+                notify.last_executed = undefined;
+              });
+            });
+          });
+        });
+      }
+      showNotifyManagerDialog.value = false;
+      showNotification(response.data.message, 'success');
+    } catch (error) {
+      console.error('移除通知戮記失败:', error);
+      // 错误处理由 axiosInterceptor.ts 处理
+    } finally {
+      hideLoading();
+    }
   };
 
-  const deleteNotify = (user_id: number | null = null) => {
-    const message = user_id ? `刪除用戶 ${user_id} 的通知請求功能尚未實作` : '刪除所有通知請求功能尚未實作';
-    showNotification(message);
+  const deleteNotify = async (user_id: number | null = null) => {
+    const message = user_id ? `刪除用戶 ${user_id} 的通知中...` : '刪除所有通知中...';
+    try {
+      showLoading(message);
+      const response = await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/admin/delete-notify/${user_id || 0}`);
+
+      // 清除前端数据中的通知
+      if (user_id) {
+        // 删除特定用户的通知
+        tasks.value.forEach(category => {
+          category.items?.forEach(item => {
+            item.progresses?.forEach(progress => {
+              if (progress.notifies) {
+                progress.notifies = progress.notifies.filter(notify => notify.user_id !== user_id);
+              }
+            });
+          });
+        });
+      } else {
+        // 删除所有通知
+        tasks.value.forEach(category => {
+          category.items?.forEach(item => {
+            item.progresses?.forEach(progress => {
+              progress.notifies = [];
+            });
+          });
+        });
+      }
+      showNotifyManagerDialog.value = false;
+      showNotification(response.data.message, 'success');
+    } catch (error) {
+      console.error('刪除通知失败:', error);
+      // 错误处理由 axiosInterceptor.ts 处理
+    } finally {
+      hideLoading();
+    }
   };
 
   const handleProgressAction = (action: string, progress: TaskProgress, item: TaskItem) => {
@@ -330,6 +409,193 @@ export function useTaskBoard() {
   const handleEditCategory = (category: TaskCategory) => {
     openAddCategoryDialog(false, category);
     closeContextMenu();
+  };
+
+  // 根據 category ID 生成 JSON 字符串，不涉及下載邏輯
+  const generateCategoryJsonString = (categoryId: number): string | null => {
+    try {
+      // 從 tasks 中找到完整的 category 記錄
+      const fullCategory = tasks.value.find(cat => cat.id === categoryId);
+
+      if (!fullCategory) {
+        return null;
+      }
+
+      // 遞迴函數：深度遍歷並清理數據，只保留必要的欄位
+      const cleanItemData = (item: TaskItem) => ({
+        id: item.id,
+        item_name: item.item_name,
+        content: item.content,
+        item_at: item.item_at,
+        progresses: (item.progresses || []).map(cleanProgressData),
+      });
+
+      const cleanProgressData = (progress: TaskProgress) => ({
+        id: progress.id,
+        progress_name: progress.progress_name,
+        content: progress.content,
+        progress_at: progress.progress_at,
+        status: progress.status,
+        notifies: (progress.notifies || []).map(notify => ({
+          id: notify.id,
+          start_at: notify.start_at,
+          stop_at: notify.stop_at,
+          run_mode: notify.run_mode,
+          run_code: notify.run_code,
+          time_at: notify.time_at,
+          week_at: notify.week_at,
+          last_executed: notify.last_executed,
+        })),
+      });
+
+      // 構建要匯出的數據結構，遞迴地包含完整的子樹
+      const exportData = {
+        category: {
+          id: fullCategory.id,
+          category_name: fullCategory.category_name,
+          content: fullCategory.content,
+          items: (fullCategory.items || []).map(cleanItemData),
+        },
+        exportTime: new Date().toISOString(),
+        stats: {
+          itemCount: fullCategory.items?.length || 0,
+          progressCount: (fullCategory.items || []).reduce((sum, item) => sum + (item.progresses?.length || 0), 0),
+          notifyCount: (fullCategory.items || []).reduce((sum, item) => {
+            return sum + (item.progresses || []).reduce((pSum, prog) => pSum + (prog.notifies?.length || 0), 0);
+          }, 0),
+        },
+      };
+
+      // 轉換為 JSON 字符串（格式化，便於閱讀）
+      return JSON.stringify(exportData, null, 2);
+    } catch (error) {
+      console.error('生成 JSON 字符串失敗:', error);
+      return null;
+    }
+  };
+
+  // ========== 導出層：通用下載函數 ==========
+
+  /**
+   * 下載 JSON 文件
+   * @param content - JSON 字符串內容
+   * @param filename - 文件名
+   */
+  const downloadJson = (content: string, filename: string): void => {
+    try {
+      const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('JSON 文件下載失敗:', error);
+      throw error;
+    }
+  };
+
+  // ========== 業務層：導出入口函數 ==========
+
+  /**
+   * 下載 HTML 文件（測試用）
+   * @param content - HTML 字符串內容
+   * @param filename - 文件名
+   */
+  const downloadHtml = (content: string, filename: string): void => {
+    try {
+      const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('HTML 文件下載失敗:', error);
+      throw error;
+    }
+  };
+
+  // ========== 業務層：導出入口函數 ==========
+
+  /**
+   * 導出分類為 JSON 文件
+   * @param category - 要導出的分類
+   */
+  const handleJSONCategory = (category: TaskCategory): void => {
+    try {
+      closeContextMenu();
+
+      // 從 tasks 中找到完整的 category 記錄（確保獲得分類名稱）
+      const fullCategory = tasks.value.find(cat => cat.id === category.id);
+
+      if (!fullCategory) {
+        showNotification('找不到該分類的完整資料', 'error');
+        return;
+      }
+
+      // 調用數據層生成 JSON 字符串
+      const jsonString = generateCategoryJsonString(category.id);
+
+      if (!jsonString) {
+        showNotification('生成 JSON 數據失敗', 'error');
+        return;
+      }
+
+      // 調用導出層下載文件
+      const filename = `${fullCategory.category_name}_${new Date().getTime()}.json`;
+      downloadJson(jsonString, filename);
+
+      showNotification(`分類「${fullCategory.category_name}」已匯出為 JSON 文件`, 'success');
+    } catch (error) {
+      console.error('導出 JSON 失敗:', error);
+      showNotification('導出 JSON 失敗', 'error');
+    }
+  };
+
+  /**
+   * 導出分類為 HTML 文件（測試用，驗證內容是否正確）
+   * @param category - 要導出的分類
+   */
+  const handleHTMLCategory = (category: TaskCategory): void => {
+    try {
+      closeContextMenu();
+
+      const fullCategory = tasks.value.find(cat => cat.id === category.id);
+
+      if (!fullCategory) {
+        showNotification('找不到該分類的完整資料', 'error');
+        return;
+      }
+
+      const jsonString = generateCategoryJsonString(category.id);
+      if (!jsonString) {
+        showNotification('生成 JSON 數據失敗', 'error');
+        return;
+      }
+
+      // 生成 HTML 模板
+      const htmlString = generateCategoryHtmlTemplate(jsonString);
+
+      // 下載 HTML 檔案
+      const filename = `${fullCategory.category_name}_${new Date().getTime()}.html`;
+      downloadHtml(htmlString, filename);
+
+      showNotification(`分類「${fullCategory.category_name}」已匯出為 HTML 文件`, 'success');
+    } catch (error) {
+      console.error('導出 HTML 失敗:', error);
+      showNotification('導出 HTML 失敗', 'error');
+    }
   };
 
   const openAddCategoryDialog = (addNew: boolean = true, editData: TaskCategory | null = null) => {
@@ -679,6 +945,7 @@ export function useTaskBoard() {
               if (notifyIndex !== -1) {
                 progress.notifies[notifyIndex] = {
                   id: response.data.id,
+                  user_id: response.data.user_id,
                   category_id: response.data.category_id,
                   item_id: response.data.item_id,
                   progress_id: response.data.progress_id,
@@ -800,6 +1067,8 @@ export function useTaskBoard() {
       return;
     }
 
+    //showNotification(JSON.stringify(progress.notifies[0]));
+
     const result = await showConfirmDialog('確定要刪除這個通知嗎？');
     if (result === 1) {
       showLoading('正在刪除通知...');
@@ -855,6 +1124,7 @@ export function useTaskBoard() {
               // 添加新通知到数组
               progress.notifies.push({
                 id: response.data.id,
+                user_id: response.data.user_id,
                 category_id: response.data.category_id,
                 item_id: response.data.item_id,
                 progress_id: response.data.progress_id,
@@ -1251,6 +1521,10 @@ export function useTaskBoard() {
     closeContextMenu,
     handleDeleteCategory,
     handleEditCategory,
+    handleJSONCategory,
+    handleHTMLCategory,
+    downloadJson,
+    downloadHtml,
     openAddCategoryDialog,
     handleUpdateCategory,
     handleCategoryAction,

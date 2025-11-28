@@ -67,7 +67,8 @@
     },
     currentItem: {
       type: Object as PropType<TaskItem | null>,
-      required: true,
+      required: false,
+      default: null,
     },
   });
 

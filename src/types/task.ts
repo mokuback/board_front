@@ -3,6 +3,7 @@ import { type NotifyRunMode } from '../utils/constants';
 
 export interface TaskNotify {
   id: number;
+  user_id: number;
   category_id: number;
   item_id: number;
   progress_id: number;
